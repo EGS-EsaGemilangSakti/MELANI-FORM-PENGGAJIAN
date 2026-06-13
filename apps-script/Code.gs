@@ -173,8 +173,8 @@ function validatePayload(data) {
   if (!/^\d{5}$/.test(data.postalCode || '')) throw new Error('Kode pos tidak valid');
   if (!validateNik(data.nik)) throw new Error('NIK tidak valid');
   if (!/^\d{4}$/.test(data.birthPlaceCode || '')) throw new Error('Kode tempat lahir tidak valid');
-  if (!/^[A-Za-z ]+$/.test(data.birthPlace || '')) throw new Error('Tempat lahir wajib dipilih dari daftar');
-  if (!/^[A-Za-z ]+$/.test(data.birthPlaceProvince || '')) throw new Error('Provinsi tempat lahir tidak valid');
+  if (!/^[A-Za-z .'-]+$/.test(data.birthPlace || '')) throw new Error('Tempat lahir wajib dipilih dari daftar');
+  if (!/^[A-Za-z .'-]+$/.test(data.birthPlaceProvince || '')) throw new Error('Provinsi tempat lahir tidak valid');
   if (!/^\d{2}-\d{2}-\d{4}$/.test(data.birthDate || '')) throw new Error('Tanggal lahir tidak valid');
   if (isFutureDdMmYyyy(data.birthDate)) throw new Error('Tanggal lahir tidak boleh masa depan');
   if (!validatePhone(data.phone)) throw new Error('Nomor telepon tidak valid');

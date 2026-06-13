@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import type { UseFormSetValue, UseFormWatch } from 'react-hook-form';
 import { useBirthRegencies } from '../../hooks/useRegional';
 import type { PayrollFormValues } from '../../types/payroll';
@@ -16,6 +17,15 @@ export function BirthPlaceField({
 }) {
   const regencies = useBirthRegencies();
   const birthPlaceCode = watch('birthPlaceCode');
+
+  useEffect(() => {
+    if (!birthPlaceCode || !regencies.data?.length) return;
+    const selected = regencies.data.find((item) => item.code === birthPlaceCode);
+    if (!selected) return;
+
+    setValue('birthPlace', sanitizeUpper(selected.name), { shouldValidate: true });
+    setValue('birthPlaceProvince', sanitizeUpper(selected.province), { shouldValidate: true });
+  }, [birthPlaceCode, regencies.data, setValue]);
 
   return (
     <FieldShell label="Tempat Lahir" error={error}>
