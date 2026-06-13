@@ -16,7 +16,7 @@ API_CO_ID_KEY=isi_api_key_api_co_id_di_sini
 SPREADSHEET_ID=1zc_UbQqmy9aCt1CcKZSxRq276DHfrh46Hts36dGDT0c
 KTP_FOLDER_ID=1jhpp1WleiTwsxI0IltAkFylFGtFO-_AO
 SURAT_KUASA_FOLDER_ID=1mqqs3jVAooV00rQpnD9OIHT-tI4NvEaA
-ALLOWED_ORIGINS=http://localhost:5173,https://domain-github-pages-kamu
+ALLOWED_ORIGINS=http://localhost:5173,https://egs-esagemilangsakti.github.io,https://form.ptesagemilangsakti.com
 
 # Tempat menaruh API key
 
@@ -37,7 +37,7 @@ API key dari API.CO.ID
 2. Aktifkan GitHub Pages dengan Source: GitHub Actions.
 3. Tunggu URL GitHub Pages aktif.
 4. Ambil origin URL GitHub Pages, contoh:
-   https://username.github.io
+   https://form.ptesagemilangsakti.com
 5. Isi Script Properties Apps Script:
    API_CO_ID_KEY
    SPREADSHEET_ID

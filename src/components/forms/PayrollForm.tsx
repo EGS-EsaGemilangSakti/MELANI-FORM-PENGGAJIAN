@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, ShieldCheck, Send } from 'lucide-react';
-import { useMemo, useRef } from 'react';
+import { ArrowLeft, ArrowRight, BarChart3, BriefcaseBusiness, Check, CloudUpload, Info, Loader2, MapPin, Send, ShieldCheck, WalletCards } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { BANKS } from '../../constants/banks';
@@ -29,7 +30,6 @@ import { PhoneField } from '../fields/PhoneField';
 import { PlacementField } from '../fields/PlacementField';
 import { PositionField } from '../fields/PositionField';
 import { PowerOfAttorneyUploadField } from '../fields/PowerOfAttorneyUploadField';
-import { FormSection } from '../layout/FormSection';
 
 const defaultValidation = {
   status: 'UNVALIDATED' as const,
@@ -39,7 +39,159 @@ const defaultValidation = {
   message: '',
 };
 
+const DRAFT_STORAGE_KEY = 'form-penggajian-karyawan-draft';
+
+const stepFields = {
+  1: [
+    'email',
+    'fullName',
+    'nik',
+    'phone',
+    'birthPlaceCode',
+    'birthPlace',
+    'birthPlaceProvince',
+    'birthDate',
+    'address',
+    'addressDetail',
+    'provinceCode',
+    'provinceName',
+    'regencyCode',
+    'regencyName',
+    'districtCode',
+    'districtName',
+    'villageCode',
+    'villageName',
+    'postalCode',
+  ],
+  2: [
+    'placement',
+    'employmentStatus',
+    'position',
+    'firstWorkDate',
+    'bankCode',
+    'bankName',
+    'accountNumber',
+    'accountOwner',
+    'accountValidation',
+    'ownershipStatus',
+    'powerOfAttorneyFile',
+  ],
+  3: ['ktpFile', 'dataAgreement'],
+} as const;
+
+type PersistedPayrollValues = Partial<Omit<PayrollFormValues, 'ktpFile' | 'powerOfAttorneyFile'>>;
+
+interface PersistedDraft {
+  currentStep?: 1 | 2 | 3;
+  values?: PersistedPayrollValues;
+}
+
+function loadPersistedDraft(): PersistedDraft {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as PersistedDraft) : {};
+  } catch {
+    return {};
+  }
+}
+
+function savePersistedDraft(currentStep: number, values: unknown) {
+  if (typeof window === 'undefined') return;
+  const persistableValues = { ...(values as Record<string, unknown>) };
+  delete persistableValues.ktpFile;
+  delete persistableValues.powerOfAttorneyFile;
+  window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ currentStep, values: persistableValues }));
+}
+
+function clearPersistedDraft() {
+  if (typeof window !== 'undefined') {
+    window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+  }
+}
+
+function Stepper({ currentStep }: { currentStep: number }) {
+  const steps = [
+    { id: 1, label: 'Identitas' },
+    { id: 2, label: 'Pekerjaan' },
+    { id: 3, label: 'Dokumen' },
+  ];
+
+  return (
+    <div className="relative flex items-center justify-between">
+      <div className="absolute left-0 right-0 top-5 h-px bg-[#353534]" />
+      {steps.map((step) => {
+        const reached = step.id <= currentStep;
+        return (
+          <div key={step.id} className="relative z-10 flex min-w-[86px] flex-col items-center gap-3 bg-[#131313] px-3">
+            <div className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold tracking-[0.05em] ${reached ? 'bg-[#d4af37] text-black' : 'border-2 border-[#d4af37] text-[#d4af37]'}`}>
+              {reached ? <Check className="h-5 w-5" /> : `0${step.id}`}
+            </div>
+            <span className={`text-xs font-medium tracking-[0.03em] ${reached ? 'text-[#f2ca50]' : 'text-[#8f7d3c]'}`}>{step.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function StepIntro({ step }: { step: 1 | 2 | 3 }) {
+  const contentByStep = {
+    1: {
+      title: 'Identitas Karyawan',
+      description: 'Lengkapi data diri Anda sesuai dengan identitas resmi (KTP).',
+    },
+    2: {
+      title: 'Data Pekerjaan',
+      description: 'Lengkapi informasi penempatan, posisi, dan rekening penggajian.',
+    },
+    3: {
+      title: 'Dokumen',
+      description: 'Unggah dokumen pendukung sesuai status kepemilikan rekening.',
+    },
+  } satisfies Record<1 | 2 | 3, { title: string; description: string }>;
+
+  const content = contentByStep[step];
+
+  return (
+    <section className="pt-10 sm:pt-14">
+      <h2 className="max-w-lg text-5xl font-bold leading-[1.08] tracking-normal text-[#e5e2e1]">{content.title}</h2>
+      <p className="mt-3 max-w-xl text-lg leading-8 text-[#d0c5af]">{content.description}</p>
+    </section>
+  );
+}
+
+function StepCard({ children, title, icon }: { children: ReactNode; title?: string; icon?: ReactNode }) {
+  return (
+    <section className="rounded-xl border border-[#d4af37]/15 bg-[#201f1f] p-6 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.4)] sm:p-8">
+      {title ? (
+        <h3 className="mb-6 flex items-center gap-3 text-2xl font-semibold text-[#e5e2e1]">
+          {icon}
+          {title}
+        </h3>
+      ) : null}
+      <div className="grid gap-5 md:grid-cols-2">{children}</div>
+    </section>
+  );
+}
+
+function formatSummaryDate(value: string): string {
+  if (!value) return '-';
+  return new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+function SummaryItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs font-medium tracking-[0.03em] text-[#d0c5af]">{label}</p>
+      <p className="mt-1 break-words text-base leading-7 text-white">{value || '-'}</p>
+    </div>
+  );
+}
+
 export function PayrollForm() {
+  const persistedDraft = useMemo(loadPersistedDraft, []);
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(persistedDraft.currentStep ?? 1);
   const submitLock = useRef(false);
   const validateMutation = useValidateBank();
   const submitMutation = useSubmitPayroll();
@@ -84,15 +236,28 @@ export function PayrollForm() {
       accountOwner: '',
       accountValidation: defaultValidation,
       ownershipStatus: '',
+      dataAgreement: false,
       website: '',
       formStartedAt: nowIso(),
+      ...persistedDraft.values,
     },
   });
 
   const accountValidation = watch('accountValidation');
   const ownershipStatus = watch('ownershipStatus');
   const bankCode = watch('bankCode');
-  const canSubmit = accountValidation.status === 'VALID' && !isSubmitting && !submitMutation.isPending;
+  const dataAgreement = watch('dataAgreement');
+  const summaryValues = watch();
+  const canSubmit = accountValidation.status === 'VALID' && dataAgreement && !isSubmitting && !submitMutation.isPending;
+
+  useEffect(() => {
+    const subscription = watch((values) => savePersistedDraft(currentStep, values));
+    return () => subscription.unsubscribe();
+  }, [currentStep, watch]);
+
+  useEffect(() => {
+    savePersistedDraft(currentStep, watch());
+  }, [currentStep, watch]);
 
   const resetValidation = () => {
     setValue('accountValidation', defaultValidation, { shouldValidate: true });
@@ -125,6 +290,22 @@ export function PayrollForm() {
   };
 
   const selectedBank = useMemo(() => BANKS.find((bank) => bank.bank_code === bankCode), [bankCode]);
+
+  const goToNextStep = async () => {
+    const fields = stepFields[currentStep as keyof typeof stepFields];
+    const isStepValid = await trigger([...fields]);
+    if (!isStepValid) {
+      toast.error('Lengkapi semua data wajib pada step ini');
+      return;
+    }
+    setCurrentStep((step) => Math.min(step + 1, 3) as 1 | 2 | 3);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const goToPreviousStep = () => {
+    setCurrentStep((step) => Math.max(step - 1, 1) as 1 | 2 | 3);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const onSubmit = async (values: PayrollFormValues) => {
     if (submitLock.current) return;
@@ -177,8 +358,10 @@ export function PayrollForm() {
       const response = await submitMutation.mutateAsync(payload);
       if (!response.success) throw new Error(response.message);
       toast.success(`${response.message}: ${response.submissionId}`);
+      clearPersistedDraft();
       reset();
       setValue('formStartedAt', nowIso());
+      setCurrentStep(1);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Pengiriman gagal');
     } finally {
@@ -187,49 +370,129 @@ export function PayrollForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8" noValidate>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-10 px-5 pb-28 pt-6 sm:px-8" noValidate>
       <input type="text" className="hidden" tabIndex={-1} autoComplete="off" {...register('website')} />
-      <FormSection title="Identitas Karyawan">
-        <EmailField register={register} error={errors.email?.message} />
-        <FullNameField register={register} setValue={setValue} error={errors.fullName?.message} />
-        <AddressField register={register} setValue={setValue} watch={watch} errors={errors} />
-        <NikField register={register} setValue={setValue} error={errors.nik?.message} />
-        <BirthPlaceField setValue={setValue} watch={watch} error={errors.birthPlaceCode?.message || errors.birthPlace?.message || errors.birthPlaceProvince?.message} />
-        <BirthDateField register={register} error={errors.birthDate?.message} />
-        <PhoneField register={register} setValue={setValue} error={errors.phone?.message} />
-      </FormSection>
 
-      <FormSection title="Data Pekerjaan">
-        <PlacementField register={register} error={errors.placement?.message} />
-        <EmploymentStatusField register={register} error={errors.employmentStatus?.message} />
-        <PositionField register={register} error={errors.position?.message} />
-        <FirstWorkDateField register={register} error={errors.firstWorkDate?.message} />
-      </FormSection>
-
-      <FormSection title="Data Rekening">
-        <BankField register={register} setValue={setValue} error={errors.bankCode?.message || errors.bankName?.message} onBankChanged={resetValidation} />
-        <AccountNumberField register={register} setValue={setValue} error={errors.accountNumber?.message} onChanged={resetValidation} />
-        <AccountOwnerField register={register} setValue={setValue} error={errors.accountOwner?.message} onChanged={resetValidation} />
-        <div className="flex items-end">
-          <button type="button" onClick={validateAccount} disabled={validateMutation.isPending} className="inline-flex w-full items-center justify-center gap-2 bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-slate-400">
-            {validateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-            VALIDASI REKENING
-          </button>
+      <section className="space-y-8 text-center">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.1em] text-[#f2ca50]">Onboarding Eksekutif</p>
+          <h1 className="mx-auto mt-2 max-w-sm text-3xl font-semibold leading-tight text-white sm:text-4xl">Formulir Data Karyawan</h1>
         </div>
-        <AccountValidationResult result={accountValidation} />
-      </FormSection>
+        <Stepper currentStep={currentStep} />
+      </section>
 
-      <FormSection title="Dokumen">
-        <OwnershipStatusField register={register} error={errors.ownershipStatus?.message} />
-        <KtpUploadField register={register} watch={watch} error={errors.ktpFile?.message} />
-        <PowerOfAttorneyUploadField register={register} required={ownershipStatus === 'ORANG LAIN'} error={errors.powerOfAttorneyFile?.message} />
-      </FormSection>
+      <StepIntro step={currentStep as 1 | 2 | 3} />
 
-      <div className="flex justify-end border-t border-line pt-6">
-        <button type="submit" disabled={!canSubmit} className="inline-flex min-w-48 items-center justify-center gap-2 bg-accent px-5 py-3 text-sm font-bold text-white transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:bg-slate-400">
-          {isSubmitting || submitMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          KIRIM DATA
-        </button>
+      {currentStep === 1 ? (
+        <div className="space-y-6">
+          <StepCard>
+            <EmailField register={register} error={errors.email?.message} />
+            <FullNameField register={register} setValue={setValue} error={errors.fullName?.message} />
+            <NikField register={register} setValue={setValue} error={errors.nik?.message} />
+            <PhoneField register={register} setValue={setValue} error={errors.phone?.message} />
+            <BirthPlaceField setValue={setValue} watch={watch} error={errors.birthPlaceCode?.message || errors.birthPlace?.message || errors.birthPlaceProvince?.message} />
+            <BirthDateField register={register} error={errors.birthDate?.message} />
+          </StepCard>
+
+          <StepCard title="Alamat Domisili" icon={<MapPin className="h-5 w-5 text-[#f2ca50]" />}>
+            <AddressField register={register} setValue={setValue} watch={watch} errors={errors} />
+          </StepCard>
+        </div>
+      ) : null}
+
+      {currentStep === 2 ? (
+        <div className="space-y-6">
+          <StepCard title="Detail Penempatan" icon={<BriefcaseBusiness className="h-5 w-5 text-[#f2ca50]" />}>
+            <PlacementField register={register} error={errors.placement?.message} />
+            <EmploymentStatusField register={register} error={errors.employmentStatus?.message} />
+            <PositionField register={register} error={errors.position?.message} />
+            <FirstWorkDateField register={register} error={errors.firstWorkDate?.message} />
+          </StepCard>
+
+          <StepCard title="Informasi Bank" icon={<WalletCards className="h-5 w-5 text-[#f2ca50]" />}>
+            <BankField register={register} setValue={setValue} error={errors.bankCode?.message || errors.bankName?.message} onBankChanged={resetValidation} />
+            <AccountNumberField register={register} setValue={setValue} error={errors.accountNumber?.message} onChanged={resetValidation} />
+            <AccountOwnerField register={register} setValue={setValue} error={errors.accountOwner?.message} onChanged={resetValidation} />
+            <div className="flex items-end">
+              <button type="button" onClick={validateAccount} disabled={validateMutation.isPending} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#f2ca50] px-4 py-3 text-sm font-semibold text-[#3c2f00] transition hover:bg-[#ffd95c] disabled:cursor-not-allowed disabled:bg-slate-500">
+                {validateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                VALIDASI REKENING
+              </button>
+            </div>
+            <AccountValidationResult result={accountValidation} />
+            <OwnershipStatusField register={register} error={errors.ownershipStatus?.message} />
+            <div className="rounded-xl border border-[#f2ca50]/20 bg-[#26231a] p-4 text-sm leading-6 text-[#d0c5af] md:col-span-2">
+              <div className="flex gap-3">
+                <Info className="mt-1 h-4 w-4 shrink-0 text-[#f2ca50]" />
+                <p>Pastikan data rekening benar untuk kelancaran proses payroll bulanan Anda.</p>
+              </div>
+            </div>
+          </StepCard>
+
+          {ownershipStatus === 'ORANG LAIN' ? (
+            <StepCard title="Unggah Dokumen" icon={<CloudUpload className="h-5 w-5 text-[#f2ca50]" />}>
+              <PowerOfAttorneyUploadField register={register} required error={errors.powerOfAttorneyFile?.message} />
+            </StepCard>
+          ) : null}
+        </div>
+      ) : null}
+
+      {currentStep === 3 ? (
+        <div className="space-y-6">
+          <StepCard title="Unggah Dokumen" icon={<CloudUpload className="h-5 w-5 text-[#f2ca50]" />}>
+            <KtpUploadField register={register} watch={watch} error={errors.ktpFile?.message} />
+          </StepCard>
+
+          <StepCard title="Ringkasan Data" icon={<BarChart3 className="h-5 w-5 text-[#f2ca50]" />}>
+            <div className="space-y-6 border-b border-white/5 pb-6 md:col-span-2">
+              <SummaryItem label="Nama Lengkap" value={summaryValues.fullName} />
+              <SummaryItem label="Posisi" value={summaryValues.position} />
+              <SummaryItem label="Status Karyawan" value={summaryValues.employmentStatus} />
+            </div>
+            <div className="space-y-6 md:col-span-2">
+              <SummaryItem label="Email" value={summaryValues.email} />
+              <SummaryItem label="Kantor Cabang" value={summaryValues.placement} />
+              <SummaryItem label="Tanggal Mulai" value={formatSummaryDate(summaryValues.firstWorkDate)} />
+              <SummaryItem label="Bank" value={summaryValues.bankName} />
+              <SummaryItem label="Status Rekening" value={summaryValues.accountValidation.status} />
+            </div>
+          </StepCard>
+
+          <label className="flex items-start gap-4 rounded-xl border border-[#f2ca50]/20 bg-[#f2ca50]/5 p-6">
+            <input
+              type="checkbox"
+              className="mt-1 h-6 w-6 shrink-0 rounded border border-[#99907c] bg-[#201f1f] accent-[#f2ca50]"
+              {...register('dataAgreement')}
+            />
+            <span className="text-sm font-semibold leading-6 tracking-[0.05em] text-[#e5e2e1]">
+              Saya menyatakan bahwa data yang saya berikan adalah benar, akurat, dan lengkap sesuai dengan dokumen asli yang berlaku. Saya memahami konsekuensi hukum atas pemberian data yang tidak sah.
+              {errors.dataAgreement?.message ? <span className="mt-2 block text-accent">{errors.dataAgreement.message}</span> : null}
+            </span>
+          </label>
+        </div>
+      ) : null}
+
+      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-[#f2ca50]/15 bg-[#1c1b1b] px-5 py-4">
+        <div className="mx-auto flex max-w-3xl gap-3">
+          {currentStep > 1 ? (
+            <button type="button" onClick={goToPreviousStep} className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-[#f2ca50]/30 px-4 text-sm font-semibold text-[#f2ca50]">
+              <ArrowLeft className="h-4 w-4" />
+              Kembali
+            </button>
+          ) : null}
+
+          {currentStep < 3 ? (
+            <button type="button" onClick={goToNextStep} className="inline-flex h-12 flex-1 items-center justify-center gap-3 rounded-xl bg-[#f2ca50] px-8 text-sm font-semibold tracking-[0.05em] text-[#3c2f00] transition hover:bg-[#ffd95c]">
+              Lanjut
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <button type="submit" disabled={!canSubmit} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#f2ca50] px-5 text-sm font-bold text-[#3c2f00] transition hover:bg-[#ffd95c] disabled:cursor-not-allowed disabled:bg-slate-500">
+              {isSubmitting || submitMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              KIRIM DATA
+            </button>
+          )}
+        </div>
       </div>
     </form>
   );

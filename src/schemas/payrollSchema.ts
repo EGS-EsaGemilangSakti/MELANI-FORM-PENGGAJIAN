@@ -49,8 +49,9 @@ export const payrollSchema = z
       message: z.string(),
     }),
     ownershipStatus: z.enum(OWNERSHIP_STATUSES, { message: 'Status kepemilikan rekening wajib dipilih' }),
-    ktpFile: fileListSchema.refine((fileList) => validateFile(fileList, KTP_MIME_TYPES), 'KTP wajib jpg, jpeg, atau png maksimal 5MB'),
+    ktpFile: fileListSchema.refine((fileList) => validateFile(fileList, KTP_MIME_TYPES), 'KTP wajib pdf, jpg, jpeg, atau png maksimal 5MB'),
     powerOfAttorneyFile: z.custom<FileList>().optional(),
+    dataAgreement: z.literal(true, { errorMap: () => ({ message: 'Pernyataan wajib disetujui' }) }),
     website: z.string().optional(),
     formStartedAt: z.string().min(1),
   })

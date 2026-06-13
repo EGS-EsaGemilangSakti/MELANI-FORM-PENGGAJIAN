@@ -10,7 +10,7 @@ interface FieldShellProps {
 export function FieldShell({ label, error, children, className = '' }: FieldShellProps) {
   return (
     <label className={`block ${className}`}>
-      <span className="mb-1 block text-sm font-medium text-ink">{label}</span>
+      <span className="mb-2 block text-sm font-semibold tracking-[0.05em] text-[#f2ca50]">{label}</span>
       {children}
       {error ? <span className="mt-1 block text-sm text-accent">{error}</span> : null}
     </label>
@@ -18,4 +18,4 @@ export function FieldShell({ label, error, children, className = '' }: FieldShel
 }
 
 export const inputClass =
-  'w-full border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:bg-slate-100';
+  'w-full border border-[#99907c]/20 bg-white px-4 py-3 text-base text-[#1c1b1b] outline-none transition placeholder:text-[#5d5a55] focus:border-[#f2ca50] focus:ring-2 focus:ring-[#f2ca50]/25 disabled:bg-slate-100';

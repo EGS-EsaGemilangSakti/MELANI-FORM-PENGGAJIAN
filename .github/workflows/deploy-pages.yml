@@ -31,6 +31,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify production API URL
+        run: test -n "$VITE_API_URL"
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+
       - name: Build
         run: npm run build
         env:

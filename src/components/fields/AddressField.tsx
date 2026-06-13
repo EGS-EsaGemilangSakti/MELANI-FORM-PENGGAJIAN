@@ -49,15 +49,6 @@ export function AddressField({
   return (
     <div className="grid gap-4 md:col-span-2 md:grid-cols-2">
       <input type="hidden" {...register('address')} />
-      <FieldShell label="Detail Alamat" error={errors.addressDetail?.message} className="md:col-span-2">
-        <textarea
-          className={`${inputClass} min-h-24 resize-y`}
-          maxLength={200}
-          value={addressDetail}
-          onChange={(event) => setValue('addressDetail', sanitizeText(event.target.value), { shouldValidate: true })}
-        />
-      </FieldShell>
-
       <FieldShell label="Provinsi" error={errors.provinceCode?.message || errors.provinceName?.message}>
         <select
           className={inputClass}
@@ -145,6 +136,16 @@ export function AddressField({
           maxLength={5}
           value={postalCode}
           onChange={(event) => setValue('postalCode', event.target.value.replace(/\D/g, ''), { shouldValidate: true })}
+        />
+      </FieldShell>
+
+      <FieldShell label="Detail Alamat" error={errors.addressDetail?.message} className="md:col-span-2">
+        <textarea
+          className={`${inputClass} min-h-24 resize-y`}
+          maxLength={200}
+          placeholder="Contoh: Jl. Merdeka No. 12, RT 003/RW 004, Blok A, patokan dekat masjid"
+          value={addressDetail}
+          onChange={(event) => setValue('addressDetail', sanitizeText(event.target.value), { shouldValidate: true })}
         />
       </FieldShell>
 

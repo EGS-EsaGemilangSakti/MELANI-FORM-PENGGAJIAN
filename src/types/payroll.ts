@@ -55,6 +55,7 @@ export interface PayrollFormValues {
   ownershipStatus: OwnershipStatus | '';
   ktpFile: FileList;
   powerOfAttorneyFile?: FileList;
+  dataAgreement: boolean;
   website?: string;
   formStartedAt: string;
 }
@@ -63,7 +64,7 @@ export interface PayrollSubmitPayload {
   origin: string;
   submittedAt: string;
   website: string;
-  data: Omit<PayrollFormValues, 'ktpFile' | 'powerOfAttorneyFile' | 'bankCode' | 'bankName'> & {
+  data: Omit<PayrollFormValues, 'ktpFile' | 'powerOfAttorneyFile' | 'dataAgreement' | 'bankCode' | 'bankName'> & {
     bank: BankOption;
   };
   files: {
