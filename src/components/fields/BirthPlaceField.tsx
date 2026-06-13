@@ -1,6 +1,7 @@
 import type { UseFormSetValue, UseFormWatch } from 'react-hook-form';
 import { useBirthRegencies } from '../../hooks/useRegional';
 import type { PayrollFormValues } from '../../types/payroll';
+import { sanitizeUpper } from '../../utils/sanitize';
 import { FieldShell } from './FieldShell';
 import { SearchableSelect } from './SearchableSelect';
 
@@ -33,8 +34,8 @@ export function BirthPlaceField({
         onChange={(selectedValue) => {
           const selected = regencies.data?.find((item) => item.code === selectedValue);
           setValue('birthPlaceCode', selected?.code ?? '', { shouldValidate: true });
-          setValue('birthPlace', selected?.name ?? '', { shouldValidate: true });
-          setValue('birthPlaceProvince', selected?.province ?? '', { shouldValidate: true });
+          setValue('birthPlace', sanitizeUpper(selected?.name ?? ''), { shouldValidate: true });
+          setValue('birthPlaceProvince', sanitizeUpper(selected?.province ?? ''), { shouldValidate: true });
         }}
       />
     </FieldShell>

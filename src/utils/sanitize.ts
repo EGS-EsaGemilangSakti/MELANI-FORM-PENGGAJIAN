@@ -15,6 +15,10 @@ export function sanitizeText(value: unknown): string {
   return escapeDangerous(String(value ?? '').trim().replace(/\s+/g, ' '));
 }
 
+export function sanitizeTextInput(value: unknown): string {
+  return escapeDangerous(String(value ?? '').replace(/\s{2,}/g, ' '));
+}
+
 export function sanitizeUpper(value: unknown): string {
   return sanitizeText(value).toUpperCase();
 }

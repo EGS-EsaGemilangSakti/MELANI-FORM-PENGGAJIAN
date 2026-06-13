@@ -173,8 +173,8 @@ function validatePayload(data) {
   if (!/^\d{5}$/.test(data.postalCode || '')) throw new Error('Kode pos tidak valid');
   if (!validateNik(data.nik)) throw new Error('NIK tidak valid');
   if (!/^\d{4}$/.test(data.birthPlaceCode || '')) throw new Error('Kode tempat lahir tidak valid');
-  if (!/^[A-Z ]+$/.test(data.birthPlace || '')) throw new Error('Tempat lahir wajib dipilih dari daftar');
-  if (!/^[A-Z ]+$/.test(data.birthPlaceProvince || '')) throw new Error('Provinsi tempat lahir tidak valid');
+  if (!/^[A-Za-z ]+$/.test(data.birthPlace || '')) throw new Error('Tempat lahir wajib dipilih dari daftar');
+  if (!/^[A-Za-z ]+$/.test(data.birthPlaceProvince || '')) throw new Error('Provinsi tempat lahir tidak valid');
   if (!/^\d{2}-\d{2}-\d{4}$/.test(data.birthDate || '')) throw new Error('Tanggal lahir tidak valid');
   if (isFutureDdMmYyyy(data.birthDate)) throw new Error('Tanggal lahir tidak boleh masa depan');
   if (!validatePhone(data.phone)) throw new Error('Nomor telepon tidak valid');
@@ -203,8 +203,8 @@ function validatePayload(data) {
     postalCode: sanitizeInput(data.postalCode),
     nik: sanitizeInput(data.nik),
     birthPlaceCode: sanitizeInput(data.birthPlaceCode),
-    birthPlace: sanitizeInput(data.birthPlace),
-    birthPlaceProvince: sanitizeInput(data.birthPlaceProvince),
+    birthPlace: sanitizeInput(data.birthPlace).toUpperCase(),
+    birthPlaceProvince: sanitizeInput(data.birthPlaceProvince).toUpperCase(),
     birthDate: data.birthDate,
     phone: String(data.phone),
     placement: data.placement,
