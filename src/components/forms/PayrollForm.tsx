@@ -476,7 +476,7 @@ export function PayrollForm() {
       {currentStep === 2 ? (
         <div className="space-y-6">
           <StepCard title="Detail Penempatan" icon={<BriefcaseBusiness className="h-5 w-5 text-[#f2ca50]" />}>
-            <PlacementField register={register} error={errors.placement?.message} />
+            <PlacementField register={register} setValue={setValue} watch={watch} error={errors.placement?.message} />
             <EmploymentStatusField register={register} error={errors.employmentStatus?.message} />
             <PositionField register={register} error={errors.position?.message} />
             <FirstWorkDateField register={register} error={errors.firstWorkDate?.message} />

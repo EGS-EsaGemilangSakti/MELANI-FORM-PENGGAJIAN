@@ -1,9 +1,5 @@
 export const PLACEMENTS = [
   'JNT CARGO CIREBON',
-  'JNT TGR',
-  'JNT SUNTER',
-  'JNT DRIVER PKU',
-  'JNT BTN',
   'MONDE',
   'JNT SEMARANG',
   'JNT TEGAL',
@@ -23,9 +19,9 @@ export const PLACEMENTS = [
   'JNT CARGO KOSAMBI',
   'JNT PALANGKARAYA',
   'MEDQUEST',
-  'PT BYAN BEKASI',
+  'PT BIYAN BEKASI',
 ] as const;
 
-export const EMPLOYMENT_STATUSES = ['Freelance', 'Kontrak'] as const;
+export const EMPLOYMENT_STATUSES = ['Freelance', 'Kontrak', 'Reguler'] as const;
 export const POSITIONS = ['Admin', 'Kordinator', 'Sorter', 'Driver', 'Kurir'] as const;
 export const OWNERSHIP_STATUSES = ['PRIBADI', 'ORANG LAIN'] as const;
