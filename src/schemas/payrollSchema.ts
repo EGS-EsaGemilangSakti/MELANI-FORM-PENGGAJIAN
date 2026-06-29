@@ -54,8 +54,8 @@ export const payrollSchema = z
       message: z.string(),
     }),
     ownershipStatus: z.enum(OWNERSHIP_STATUSES, { message: 'Status kepemilikan rekening wajib dipilih' }),
-    ktpFile: fileListSchema.refine((fileList) => validateFile(fileList, KTP_MIME_TYPES), 'KTP wajib pdf, jpg, jpeg, atau png maksimal 5MB'),
-    familyCardFile: fileListSchema.refine((fileList) => validateFile(fileList, FAMILY_CARD_MIME_TYPES), 'Kartu Keluarga wajib pdf, jpg, jpeg, atau png maksimal 5MB'),
+    ktpFile: fileListSchema.refine((fileList) => validateFile(fileList, KTP_MIME_TYPES), 'KTP wajib pdf, jpg, jpeg, atau png maksimal 10MB'),
+    familyCardFile: fileListSchema.refine((fileList) => validateFile(fileList, FAMILY_CARD_MIME_TYPES), 'Kartu Keluarga wajib pdf, jpg, jpeg, atau png maksimal 10MB'),
     powerOfAttorneyFile: z.custom<FileList>().optional(),
     dataAgreement: z.literal(true, { errorMap: () => ({ message: 'Pernyataan wajib disetujui' }) }),
     website: z.string().optional(),
@@ -71,7 +71,7 @@ export const payrollSchema = z
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['powerOfAttorneyFile'], message: 'Surat kuasa wajib diunggah' });
     }
     if (hasFile && !validateFile(fileList, POWER_OF_ATTORNEY_MIME_TYPES)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['powerOfAttorneyFile'], message: 'Surat kuasa wajib pdf, jpg, jpeg, atau png maksimal 5MB' });
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['powerOfAttorneyFile'], message: 'Surat kuasa wajib pdf, jpg, jpeg, atau png maksimal 10MB' });
     }
   });
 

@@ -371,10 +371,10 @@ function uploadToDrive(filePayload, type, submissionId) {
   if (!filePayload || !filePayload.base64) throw new Error('File wajib diunggah');
   const allowedMimeTypes = ALLOWED_MIME_TYPES[type];
   if (allowedMimeTypes.indexOf(filePayload.mimeType) === -1) throw new Error('MIME file tidak valid');
-  if (Number(filePayload.size) > MAX_FILE_SIZE) throw new Error('Ukuran file melebihi 5MB');
+  if (Number(filePayload.size) > MAX_FILE_SIZE) throw new Error('Ukuran file melebihi 10MB');
 
   const bytes = Utilities.base64Decode(filePayload.base64);
-  if (bytes.length > MAX_FILE_SIZE) throw new Error('Ukuran file melebihi 5MB');
+  if (bytes.length > MAX_FILE_SIZE) throw new Error('Ukuran file melebihi 10MB');
 
   const extension = getExtension(filePayload.mimeType);
   const folderId = type === 'ktp' ? KTP_FOLDER_ID : (type === 'kartuKeluarga' ? KK_FOLDER_ID : SURAT_KUASA_FOLDER_ID);

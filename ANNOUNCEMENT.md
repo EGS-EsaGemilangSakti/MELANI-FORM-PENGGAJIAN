@@ -71,7 +71,7 @@ Dokumen yang didukung:
 - KTP: PDF, JPG, JPEG, PNG.
 - Surat Kuasa: PDF, JPG, JPEG, PNG.
 
-Ukuran maksimal file adalah 5MB.
+Ukuran maksimal file adalah 10MB.
 
 Rules:
 
@@ -219,7 +219,7 @@ Jika pada sheet `JNT TGR` terdapat dua baris dengan NIK yang sama, maka kedua ba
 - KTP wajib diunggah.
 - Surat Kuasa wajib hanya jika rekening milik orang lain.
 - File wajib sesuai MIME type yang diizinkan.
-- Ukuran file maksimal 5MB.
+- Ukuran file maksimal 10MB.
 
 ## Keamanan Sistem
 
