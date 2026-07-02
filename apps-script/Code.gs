@@ -420,7 +420,7 @@ function buildSubmissionRow(submissionId, data, validation, ktpUrl, suratKuasaUr
     data.employmentStatus,
     data.position,
     data.firstWorkDate,
-    data.bank.bank_name,
+    getSpreadsheetBankName(data.bank),
     data.bank.bank_code,
     "'" + data.accountNumber,
     data.accountOwner,
@@ -433,6 +433,11 @@ function buildSubmissionRow(submissionId, data, validation, ktpUrl, suratKuasaUr
     suratKuasaUrl,
     familyCardUrl
   ];
+}
+
+function getSpreadsheetBankName(bank) {
+  if (bank && bank.bank_code === 'bank_kesejahteraan_ekonomi') return 'seabank';
+  return bank && bank.bank_name ? bank.bank_name : '';
 }
 
 function getPlacementSheetName(placement) {

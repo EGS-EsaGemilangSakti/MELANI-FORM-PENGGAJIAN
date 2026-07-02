@@ -45,7 +45,7 @@ export function PowerOfAttorneyUploadField({
         <p className="max-w-full break-words text-sm font-semibold tracking-[0.05em] text-white">
           {file ? file.name : 'Upload Surat Kuasa'}
         </p>
-        <p className="mt-1 max-w-52 text-xs font-medium leading-4 text-[#d0c5af]">Format PDF, JPG, JPEG, atau PNG. Maks 10MB. Wajib jika rekening milik orang lain.</p>
+        <p className="mt-1 max-w-52 text-xs font-medium leading-4 text-[#d0c5af]">Format PDF, JPG, JPEG, atau PNG. Gambar dikompres otomatis, PDF maks 10MB. Wajib jika rekening milik orang lain.</p>
         <input className="absolute inset-0 cursor-pointer opacity-0" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" {...fileRegister} />
       </div>
       {error ? <span className="mt-2 block text-sm text-accent">{error}</span> : null}
