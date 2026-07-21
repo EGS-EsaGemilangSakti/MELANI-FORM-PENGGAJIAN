@@ -1,6 +1,27 @@
 export const PLACEMENTS = ['SHOPEE EXPRESS', 'WAHANA EXPRESS'] as const;
 
-export const EMPLOYMENT_STATUSES = ['DWO', 'DWR', 'DEDICATED'] as const;
+export const WAHANA_EMPLOYMENT_STATUSES = ['Daily Worker', 'DWO', 'DEDICATED'] as const;
+export const SHOPEE_EMPLOYMENT_STATUSES = [
+  'OPERATOR DEDICATED',
+  'TRACER ADMIN',
+  'OPERATOR CACHE',
+  'OPERATOR EHA',
+  'MM ADMIN',
+  'ADMIN SPV',
+  'SHIFTLEAD/HUBLEAD/CAPTAIN',
+  'SPRINTER DROP OFF',
+  'DELIVERY SUPPORT ADMIN',
+  'TRACER ADMIN EHA',
+  'CT MONITORING ADMIN',
+  'SPG',
+  'MM ADMIN SUPPORT',
+  'TEAM MAINTENANCE POOL OFFICER',
+  'MM COORDINATOR',
+  'VEHICLE MAINTENANCE & LAKA',
+  'DRIVER INTRAHUB',
+  'Daily Worker',
+] as const;
+export const EMPLOYMENT_STATUSES = [...WAHANA_EMPLOYMENT_STATUSES, ...SHOPEE_EMPLOYMENT_STATUSES] as const;
 export const POSITIONS = ['Shorter'] as const;
 export const OWNERSHIP_STATUSES = ['PRIBADI', 'ORANG LAIN'] as const;
 export const EMERGENCY_RELATIONSHIPS = ['Saudara Kandung', 'Saudara', 'Ibu', 'Ayah'] as const;

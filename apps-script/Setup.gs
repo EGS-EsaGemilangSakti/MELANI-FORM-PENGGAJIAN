@@ -7,6 +7,12 @@ function setup() {
   DriveApp.getFolderById(KTP_FOLDER_ID);
   DriveApp.getFolderById(KK_FOLDER_ID);
   DriveApp.getFolderById(SURAT_KUASA_FOLDER_ID);
+  DriveApp.getFolderById(PERSONAL_PHOTO_FOLDER_ID);
+  DriveApp.getFolderById(DIPLOMA_FOLDER_ID);
+  DriveApp.getFolderById(NPWP_FOLDER_ID);
+  DriveApp.getFolderById(BPJS_HEALTH_FOLDER_ID);
+  DriveApp.getFolderById(BPJS_EMPLOYMENT_FOLDER_ID);
+  DriveApp.getFolderById(DOMICILE_LETTER_FOLDER_ID);
   console.log('Setup berhasil: header spreadsheet, sinkronisasi sheet penempatan, format duplikat NIK, dan folder Drive valid.');
 }
 

@@ -30,6 +30,9 @@ export function PlacementField({ register, setValue, watch, error }: PlacementFi
         options={options}
         onChange={(selectedValue) => {
           setValue('placement', selectedValue, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+          setValue('employmentStatus', '', { shouldDirty: true, shouldValidate: true });
+          setValue('opsId', '', { shouldDirty: true, shouldValidate: true });
+          setValue('osId', '', { shouldDirty: true, shouldValidate: true });
         }}
       />
     </FieldShell>

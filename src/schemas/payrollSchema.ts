@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { MIN_ACCOUNT_VALIDATION_SCORE } from '../constants/accountValidation';
 import { BANKS } from '../constants/banks';
-import { EMERGENCY_RELATIONSHIPS, EMPLOYMENT_STATUSES, OWNERSHIP_STATUSES, PLACEMENTS, POSITIONS } from '../constants/placements';
+import { EMERGENCY_RELATIONSHIPS, EMPLOYMENT_STATUSES, OWNERSHIP_STATUSES, PLACEMENTS, POSITIONS, SHOPEE_EMPLOYMENT_STATUSES, WAHANA_EMPLOYMENT_STATUSES } from '../constants/placements';
 import { GENDERS, MARITAL_STATUSES, PTKP_CODES, RELIGIONS } from '../constants/personal';
-import { FAMILY_CARD_MIME_TYPES, KTP_MIME_TYPES, MAX_FILE_SIZE, POWER_OF_ATTORNEY_MIME_TYPES } from '../utils/validators';
+import { EMPLOYEE_DOCUMENT_MIME_TYPES, FAMILY_CARD_MIME_TYPES, KTP_MIME_TYPES, MAX_FILE_SIZE, POWER_OF_ATTORNEY_MIME_TYPES } from '../utils/validators';
 
 const fileListSchema = z.custom<FileList>();
 
@@ -66,6 +66,7 @@ export const payrollSchema = z
     placement: z.enum(PLACEMENTS, { message: 'Penempatan wajib dipilih' }),
     area: z.string().trim().min(1, 'Area wajib diisi').regex(/^[-A-Z0-9 .,'()/]+$/, 'Area harus menggunakan huruf kapital'),
     opsId: z.string().trim().min(1, 'ID OPS wajib diisi'),
+    osId: z.string().trim(),
     employmentStatus: z.enum(EMPLOYMENT_STATUSES, { message: 'Status karyawan wajib dipilih' }),
     position: z.enum(POSITIONS, { message: 'Posisi wajib dipilih' }),
     firstWorkDate: z.string().min(1, 'Tanggal kerja pertama wajib diisi'),
@@ -83,12 +84,25 @@ export const payrollSchema = z
     ownershipStatus: z.enum(OWNERSHIP_STATUSES, { message: 'Status kepemilikan rekening wajib dipilih' }),
     ktpFile: fileListSchema,
     familyCardFile: fileListSchema,
+    personalPhotoFile: z.custom<FileList>().optional(),
+    diplomaFile: z.custom<FileList>().optional(),
+    npwpFile: z.custom<FileList>().optional(),
+    bpjsHealthFile: z.custom<FileList>().optional(),
+    bpjsEmploymentFile: z.custom<FileList>().optional(),
+    domicileLetterFile: z.custom<FileList>().optional(),
     powerOfAttorneyFile: z.custom<FileList>().optional(),
     dataAgreement: z.literal(true, { errorMap: () => ({ message: 'Pernyataan wajib disetujui' }) }),
     website: z.string().optional(),
     formStartedAt: z.string().min(1),
   })
   .superRefine((data, ctx) => {
+    const allowedStatuses = data.placement === 'SHOPEE EXPRESS' ? SHOPEE_EMPLOYMENT_STATUSES : WAHANA_EMPLOYMENT_STATUSES;
+    if (!(allowedStatuses as readonly string[]).includes(data.employmentStatus)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['employmentStatus'], message: 'Status karyawan tidak sesuai penempatan' });
+    }
+    if (data.placement === 'SHOPEE EXPRESS' && data.employmentStatus !== 'Daily Worker' && !/^[A-Za-z0-9]+$/.test(data.osId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['osId'], message: 'ID OS wajib diisi dengan huruf atau angka' });
+    }
     if (data.placement === 'SHOPEE EXPRESS' && !/^\d+$/.test(data.opsId)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['opsId'], message: 'ID OPS Shopee hanya boleh berisi angka' });
     }
@@ -100,6 +114,17 @@ export const payrollSchema = z
     }
     validateUploadFile(data.ktpFile, KTP_MIME_TYPES, 'KTP', 'KTP wajib diunggah', 'KTP wajib pdf, jpg, jpeg, atau png maksimal 5MB', ctx, ['ktpFile']);
     validateUploadFile(data.familyCardFile, FAMILY_CARD_MIME_TYPES, 'Kartu Keluarga', 'Kartu Keluarga wajib diunggah', 'Kartu Keluarga wajib pdf, jpg, jpeg, atau png maksimal 5MB', ctx, ['familyCardFile']);
+
+    if (data.placement === 'SHOPEE EXPRESS') {
+      validateUploadFile(data.personalPhotoFile, EMPLOYEE_DOCUMENT_MIME_TYPES, 'Foto Diri', 'Foto diri wajib diunggah', 'Foto diri wajib jpg, jpeg, atau png maksimal 5MB', ctx, ['personalPhotoFile']);
+      validateUploadFile(data.diplomaFile, EMPLOYEE_DOCUMENT_MIME_TYPES, 'Ijazah', 'Ijazah wajib diunggah', 'Ijazah wajib jpg, jpeg, atau png maksimal 5MB', ctx, ['diplomaFile']);
+      if (data.employmentStatus !== 'Daily Worker') {
+        validateUploadFile(data.npwpFile, EMPLOYEE_DOCUMENT_MIME_TYPES, 'NPWP', 'NPWP wajib diunggah', 'NPWP wajib jpg, jpeg, atau png maksimal 5MB', ctx, ['npwpFile']);
+        validateUploadFile(data.bpjsHealthFile, EMPLOYEE_DOCUMENT_MIME_TYPES, 'BPJS Kesehatan', 'BPJS Kesehatan wajib diunggah', 'BPJS Kesehatan wajib jpg, jpeg, atau png maksimal 5MB', ctx, ['bpjsHealthFile']);
+        validateUploadFile(data.bpjsEmploymentFile, EMPLOYEE_DOCUMENT_MIME_TYPES, 'BPJS Ketenagakerjaan', 'BPJS Ketenagakerjaan wajib diunggah', 'BPJS Ketenagakerjaan wajib jpg, jpeg, atau png maksimal 5MB', ctx, ['bpjsEmploymentFile']);
+        validateUploadFile(data.domicileLetterFile, EMPLOYEE_DOCUMENT_MIME_TYPES, 'Surat Domisili', 'Surat domisili wajib diunggah', 'Surat domisili wajib jpg, jpeg, atau png maksimal 5MB', ctx, ['domicileLetterFile']);
+      }
+    }
 
     const powerOfAttorneyFile = data.powerOfAttorneyFile;
     const hasPowerOfAttorney = powerOfAttorneyFile instanceof FileList && powerOfAttorneyFile.length > 0;

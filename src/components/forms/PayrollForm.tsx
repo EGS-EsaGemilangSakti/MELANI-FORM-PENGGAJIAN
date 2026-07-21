@@ -24,6 +24,7 @@ import { BirthDateField } from '../fields/BirthDateField';
 import { BirthPlaceField } from '../fields/BirthPlaceField';
 import { EmailField } from '../fields/EmailField';
 import { EmploymentStatusField } from '../fields/EmploymentStatusField';
+import { EmployeeDocumentUploadField } from '../fields/EmployeeDocumentUploadField';
 import { FirstWorkDateField } from '../fields/FirstWorkDateField';
 import { FamilyCardUploadField } from '../fields/FamilyCardUploadField';
 import { FullNameField } from '../fields/FullNameField';
@@ -80,6 +81,7 @@ const stepFields = {
     'placement',
     'area',
     'opsId',
+    'osId',
     'employmentStatus',
     'position',
     'firstWorkDate',
@@ -91,10 +93,10 @@ const stepFields = {
     'ownershipStatus',
     'powerOfAttorneyFile',
   ],
-  3: ['ktpFile', 'familyCardFile', 'dataAgreement'],
+  3: ['ktpFile', 'familyCardFile', 'personalPhotoFile', 'diplomaFile', 'npwpFile', 'bpjsHealthFile', 'bpjsEmploymentFile', 'domicileLetterFile', 'dataAgreement'],
 } as const;
 
-type PersistedPayrollValues = Partial<Omit<PayrollFormValues, 'ktpFile' | 'familyCardFile' | 'powerOfAttorneyFile'>>;
+type PersistedPayrollValues = Partial<Omit<PayrollFormValues, 'ktpFile' | 'familyCardFile' | 'powerOfAttorneyFile' | 'personalPhotoFile' | 'diplomaFile' | 'npwpFile' | 'bpjsHealthFile' | 'bpjsEmploymentFile' | 'domicileLetterFile'>>;
 
 interface PersistedDraft {
   currentStep?: 1 | 2 | 3;
@@ -133,6 +135,7 @@ function getEmptyFormValues(): DefaultValues<PayrollFormValues> {
     placement: '',
     area: '',
     opsId: '',
+    osId: '',
     employmentStatus: '',
     position: '',
     firstWorkDate: '',
@@ -170,6 +173,12 @@ function savePersistedDraft(currentStep: number, values: unknown) {
   delete persistableValues.ktpFile;
   delete persistableValues.familyCardFile;
   delete persistableValues.powerOfAttorneyFile;
+  delete persistableValues.personalPhotoFile;
+  delete persistableValues.diplomaFile;
+  delete persistableValues.npwpFile;
+  delete persistableValues.bpjsHealthFile;
+  delete persistableValues.bpjsEmploymentFile;
+  delete persistableValues.domicileLetterFile;
   window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ currentStep, values: persistableValues }));
 }
 
@@ -398,6 +407,12 @@ export function PayrollForm() {
       const ktp = values.ktpFile.item(0);
       const familyCard = values.familyCardFile.item(0);
       const powerOfAttorney = values.powerOfAttorneyFile?.item(0) ?? null;
+      const personalPhoto = values.personalPhotoFile?.item(0) ?? null;
+      const diploma = values.diplomaFile?.item(0) ?? null;
+      const npwp = values.npwpFile?.item(0) ?? null;
+      const bpjsHealth = values.bpjsHealthFile?.item(0) ?? null;
+      const bpjsEmployment = values.bpjsEmploymentFile?.item(0) ?? null;
+      const domicileLetter = values.domicileLetterFile?.item(0) ?? null;
       if (!ktp || !familyCard || !selectedBank) throw new Error('Data belum lengkap');
       const payload = {
         origin: window.location.origin,
@@ -434,6 +449,7 @@ export function PayrollForm() {
           placement: values.placement,
           area: values.area,
           opsId: values.opsId,
+          osId: values.osId,
           employmentStatus: values.employmentStatus,
           position: values.position,
           firstWorkDate: toDisplayDate(values.firstWorkDate),
@@ -447,6 +463,12 @@ export function PayrollForm() {
         files: {
           ktp: await fileToBase64Payload(ktp, 'KTP'),
           familyCard: await fileToBase64Payload(familyCard, 'Kartu Keluarga'),
+          personalPhoto: personalPhoto ? await fileToBase64Payload(personalPhoto, 'Foto Diri') : null,
+          diploma: diploma ? await fileToBase64Payload(diploma, 'Ijazah') : null,
+          npwp: npwp ? await fileToBase64Payload(npwp, 'NPWP') : null,
+          bpjsHealth: bpjsHealth ? await fileToBase64Payload(bpjsHealth, 'BPJS Kesehatan') : null,
+          bpjsEmployment: bpjsEmployment ? await fileToBase64Payload(bpjsEmployment, 'BPJS Ketenagakerjaan') : null,
+          domicileLetter: domicileLetter ? await fileToBase64Payload(domicileLetter, 'Surat Domisili') : null,
           powerOfAttorney: powerOfAttorney ? await fileToBase64Payload(powerOfAttorney, 'Surat Kuasa') : null,
         },
       };
@@ -513,8 +535,8 @@ export function PayrollForm() {
         <div className="space-y-6">
           <StepCard title="Detail Penempatan" icon={<BriefcaseBusiness className="h-5 w-5 text-[#f2ca50]" />}>
             <PlacementField register={register} setValue={setValue} watch={watch} error={errors.placement?.message} />
-            <AreaAndOpsFields register={register} setValue={setValue} watch={watch} errors={{ area: errors.area?.message, opsId: errors.opsId?.message }} />
-            <EmploymentStatusField register={register} error={errors.employmentStatus?.message} />
+            <EmploymentStatusField register={register} setValue={setValue} watch={watch} error={errors.employmentStatus?.message} />
+            <AreaAndOpsFields register={register} setValue={setValue} watch={watch} errors={{ area: errors.area?.message, opsId: errors.opsId?.message, osId: errors.osId?.message }} />
             <PositionField register={register} error={errors.position?.message} />
             <FirstWorkDateField register={register} error={errors.firstWorkDate?.message} />
           </StepCard>
@@ -550,8 +572,16 @@ export function PayrollForm() {
       {currentStep === 3 ? (
         <div className="space-y-6">
           <StepCard title="Unggah Dokumen" icon={<CloudUpload className="h-5 w-5 text-[#f2ca50]" />}>
+            {summaryValues.placement === 'SHOPEE EXPRESS' ? <EmployeeDocumentUploadField name="personalPhotoFile" label="Foto Diri" register={register} watch={watch} trigger={trigger} error={errors.personalPhotoFile?.message} /> : null}
             <KtpUploadField register={register} watch={watch} trigger={trigger} error={errors.ktpFile?.message} />
             <FamilyCardUploadField register={register} watch={watch} trigger={trigger} error={errors.familyCardFile?.message} />
+            {summaryValues.placement === 'SHOPEE EXPRESS' ? <EmployeeDocumentUploadField name="diplomaFile" label="Foto Ijazah" register={register} watch={watch} trigger={trigger} error={errors.diplomaFile?.message} /> : null}
+            {summaryValues.placement === 'SHOPEE EXPRESS' && summaryValues.employmentStatus !== 'Daily Worker' ? <>
+              <EmployeeDocumentUploadField name="npwpFile" label="Foto NPWP" register={register} watch={watch} trigger={trigger} error={errors.npwpFile?.message} />
+              <EmployeeDocumentUploadField name="bpjsHealthFile" label="Foto BPJS Kesehatan" register={register} watch={watch} trigger={trigger} error={errors.bpjsHealthFile?.message} />
+              <EmployeeDocumentUploadField name="bpjsEmploymentFile" label="Foto BPJS Ketenagakerjaan" register={register} watch={watch} trigger={trigger} error={errors.bpjsEmploymentFile?.message} />
+              <EmployeeDocumentUploadField name="domicileLetterFile" label="Foto Surat Domisili" register={register} watch={watch} trigger={trigger} error={errors.domicileLetterFile?.message} />
+            </> : null}
           </StepCard>
 
           <StepCard title="Ringkasan Data" icon={<BarChart3 className="h-5 w-5 text-[#f2ca50]" />}>
@@ -561,6 +591,7 @@ export function PayrollForm() {
               <SummaryItem label="Status Karyawan" value={summaryValues.employmentStatus} />
               <SummaryItem label="Area" value={summaryValues.area} />
               <SummaryItem label="ID OPS" value={summaryValues.placement === 'SHOPEE EXPRESS' ? `Ops${summaryValues.opsId}` : summaryValues.opsId} />
+              {summaryValues.osId ? <SummaryItem label="ID OS" value={summaryValues.osId} /> : null}
             </div>
             <div className="space-y-6 md:col-span-2">
               <SummaryItem label="Email" value={summaryValues.email} />

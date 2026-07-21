@@ -23,6 +23,7 @@ const HEADERS = [
   'Penempatan',
   'Area',
   'ID OPS',
+  'ID OS',
   'Status Karyawan',
   'Posisi',
   'Tanggal Kerja Pertama',
@@ -37,7 +38,13 @@ const HEADERS = [
   'Status Kepemilikan Rekening',
   'KTP URL',
   'Surat Kuasa URL',
-  'Kartu Keluarga URL'
+  'Kartu Keluarga URL',
+  'Foto Diri URL',
+  'Ijazah URL',
+  'NPWP URL',
+  'BPJS Kesehatan URL',
+  'BPJS Ketenagakerjaan URL',
+  'Surat Domisili URL'
 ];
 const ALLOWED_FIELDS = [
   'email',
@@ -70,6 +77,7 @@ const ALLOWED_FIELDS = [
   'placement',
   'area',
   'opsId',
+  'osId',
   'employmentStatus',
   'position',
   'firstWorkDate',
@@ -82,7 +90,27 @@ const ALLOWED_FIELDS = [
 ];
 const PLACEMENTS = ['SHOPEE EXPRESS', 'WAHANA EXPRESS'];
 const MIN_ACCOUNT_VALIDATION_SCORE = 10;
-const EMPLOYMENT_STATUSES = ['DWO', 'DWR', 'DEDICATED'];
+const WAHANA_EMPLOYMENT_STATUSES = ['Daily Worker', 'DWO', 'DEDICATED'];
+const SHOPEE_EMPLOYMENT_STATUSES = [
+  'OPERATOR DEDICATED',
+  'TRACER ADMIN',
+  'OPERATOR CACHE',
+  'OPERATOR EHA',
+  'MM ADMIN',
+  'ADMIN SPV',
+  'SHIFTLEAD/HUBLEAD/CAPTAIN',
+  'SPRINTER DROP OFF',
+  'DELIVERY SUPPORT ADMIN',
+  'TRACER ADMIN EHA',
+  'CT MONITORING ADMIN',
+  'SPG',
+  'MM ADMIN SUPPORT',
+  'TEAM MAINTENANCE POOL OFFICER',
+  'MM COORDINATOR',
+  'VEHICLE MAINTENANCE & LAKA',
+  'DRIVER INTRAHUB',
+  'Daily Worker'
+];
 const POSITIONS = ['Shorter'];
 const EMERGENCY_RELATIONSHIPS = ['Saudara Kandung', 'Saudara', 'Ibu', 'Ayah'];
 const OWNERSHIP_STATUSES = ['PRIBADI', 'ORANG LAIN'];
@@ -170,6 +198,16 @@ function handleSubmitPayroll(payload) {
   if (data.ownershipStatus === 'ORANG LAIN' && !(payload.files && payload.files.powerOfAttorney)) {
     throw new Error('Surat kuasa wajib diunggah');
   }
+  if (data.placement === 'SHOPEE EXPRESS') {
+    if (!(payload.files && payload.files.personalPhoto)) throw new Error('Foto diri wajib diunggah');
+    if (!(payload.files && payload.files.diploma)) throw new Error('Ijazah wajib diunggah');
+    if (data.employmentStatus !== 'Daily Worker') {
+      if (!payload.files.npwp) throw new Error('NPWP wajib diunggah');
+      if (!payload.files.bpjsHealth) throw new Error('BPJS Kesehatan wajib diunggah');
+      if (!payload.files.bpjsEmployment) throw new Error('BPJS Ketenagakerjaan wajib diunggah');
+      if (!payload.files.domicileLetter) throw new Error('Surat domisili wajib diunggah');
+    }
+  }
 
   const ktpFile = uploadToDrive(payload.files && payload.files.ktp, 'ktp', submissionId);
   const familyCardFile = uploadToDrive(payload.files && payload.files.familyCard, 'kartuKeluarga', submissionId);
@@ -179,7 +217,16 @@ function handleSubmitPayroll(payload) {
     suratKuasaFile = uploadToDrive(payload.files.powerOfAttorney, 'suratKuasa', submissionId);
   }
 
-  saveToSpreadsheet(submissionId, data, backendValidation, ktpFile.url, suratKuasaFile.url, familyCardFile.url);
+  const employeeDocuments = {
+    personalPhoto: uploadOptionalToDrive(payload.files && payload.files.personalPhoto, 'personalPhoto', submissionId),
+    diploma: uploadOptionalToDrive(payload.files && payload.files.diploma, 'diploma', submissionId),
+    npwp: uploadOptionalToDrive(payload.files && payload.files.npwp, 'npwp', submissionId),
+    bpjsHealth: uploadOptionalToDrive(payload.files && payload.files.bpjsHealth, 'bpjsHealth', submissionId),
+    bpjsEmployment: uploadOptionalToDrive(payload.files && payload.files.bpjsEmployment, 'bpjsEmployment', submissionId),
+    domicileLetter: uploadOptionalToDrive(payload.files && payload.files.domicileLetter, 'domicileLetter', submissionId)
+  };
+
+  saveToSpreadsheet(submissionId, data, backendValidation, ktpFile.url, suratKuasaFile.url, familyCardFile.url, employeeDocuments);
   logSubmission('SUCCESS', submissionId, 'Data berhasil disimpan');
 
   return {
@@ -219,7 +266,9 @@ function validatePayload(data) {
   if (!/^[A-Z0-9 .,'()\/\-]+$/.test(data.area || '')) throw new Error('Area tidak valid');
   if (data.placement === 'SHOPEE EXPRESS' && !/^\d+$/.test(data.opsId || '')) throw new Error('ID OPS Shopee hanya boleh berisi angka');
   if (data.placement === 'WAHANA EXPRESS' && !/^[A-Za-z0-9]+$/.test(data.opsId || '')) throw new Error('ID OPS Wahana hanya boleh berisi huruf dan angka');
-  if (EMPLOYMENT_STATUSES.indexOf(data.employmentStatus) === -1) throw new Error('Status karyawan tidak valid');
+  const allowedEmploymentStatuses = data.placement === 'SHOPEE EXPRESS' ? SHOPEE_EMPLOYMENT_STATUSES : WAHANA_EMPLOYMENT_STATUSES;
+  if (allowedEmploymentStatuses.indexOf(data.employmentStatus) === -1) throw new Error('Status karyawan tidak sesuai penempatan');
+  if (data.placement === 'SHOPEE EXPRESS' && data.employmentStatus !== 'Daily Worker' && !/^[A-Za-z0-9]+$/.test(data.osId || '')) throw new Error('ID OS wajib diisi dengan huruf atau angka');
   if (POSITIONS.indexOf(data.position) === -1) throw new Error('Posisi tidak valid');
   if (!/^\d{2}-\d{2}-\d{4}$/.test(data.firstWorkDate || '')) throw new Error('Tanggal kerja pertama tidak valid');
   if (!validateBank(data.bank)) throw new Error('Bank tidak valid');
@@ -258,6 +307,7 @@ function validatePayload(data) {
     placement: data.placement,
     area: sanitizeInput(data.area).toUpperCase(),
     opsId: data.placement === 'SHOPEE EXPRESS' ? 'Ops' + String(data.opsId) : sanitizeInput(data.opsId),
+    osId: data.placement === 'SHOPEE EXPRESS' && data.employmentStatus !== 'Daily Worker' ? sanitizeInput(data.osId).toUpperCase() : '',
     employmentStatus: data.employmentStatus,
     position: data.position,
     firstWorkDate: data.firstWorkDate,
@@ -404,7 +454,19 @@ function uploadToDrive(filePayload, type, submissionId) {
   if (bytes.length > MAX_FILE_SIZE) throw new Error('Ukuran file melebihi 5MB');
 
   const extension = getExtension(filePayload.mimeType);
-  const folderId = type === 'ktp' ? KTP_FOLDER_ID : (type === 'kartuKeluarga' ? KK_FOLDER_ID : SURAT_KUASA_FOLDER_ID);
+  const folderIds = {
+    ktp: KTP_FOLDER_ID,
+    kartuKeluarga: KK_FOLDER_ID,
+    suratKuasa: SURAT_KUASA_FOLDER_ID,
+    personalPhoto: PERSONAL_PHOTO_FOLDER_ID,
+    diploma: DIPLOMA_FOLDER_ID,
+    npwp: NPWP_FOLDER_ID,
+    bpjsHealth: BPJS_HEALTH_FOLDER_ID,
+    bpjsEmployment: BPJS_EMPLOYMENT_FOLDER_ID,
+    domicileLetter: DOMICILE_LETTER_FOLDER_ID
+  };
+  const folderId = folderIds[type];
+  if (!folderId) throw new Error('Folder dokumen tidak dikenal');
   const fileName = submissionId + '-' + type + extension;
   const blob = Utilities.newBlob(bytes, filePayload.mimeType, fileName);
   const createdFile = DriveApp.getFolderById(folderId).createFile(blob);
@@ -415,8 +477,12 @@ function uploadToDrive(filePayload, type, submissionId) {
   };
 }
 
-function saveToSpreadsheet(submissionId, data, validation, ktpUrl, suratKuasaUrl, familyCardUrl) {
-  const row = buildSubmissionRow(submissionId, data, validation, ktpUrl, suratKuasaUrl, familyCardUrl);
+function uploadOptionalToDrive(filePayload, type, submissionId) {
+  return filePayload ? uploadToDrive(filePayload, type, submissionId).url : '';
+}
+
+function saveToSpreadsheet(submissionId, data, validation, ktpUrl, suratKuasaUrl, familyCardUrl, employeeDocuments) {
+  const row = buildSubmissionRow(submissionId, data, validation, ktpUrl, suratKuasaUrl, familyCardUrl, employeeDocuments);
   const mainSheet = getSheet(SHEET_NAME);
   createSpreadsheetHeaders();
   mainSheet.appendRow(row);
@@ -428,7 +494,7 @@ function saveToSpreadsheet(submissionId, data, validation, ktpUrl, suratKuasaUrl
   applyDuplicateNikFormattingToSheet(placementSheet);
 }
 
-function buildSubmissionRow(submissionId, data, validation, ktpUrl, suratKuasaUrl, familyCardUrl) {
+function buildSubmissionRow(submissionId, data, validation, ktpUrl, suratKuasaUrl, familyCardUrl, employeeDocuments) {
   return [
     submissionId,
     new Date(),
@@ -450,6 +516,7 @@ function buildSubmissionRow(submissionId, data, validation, ktpUrl, suratKuasaUr
     data.placement,
     data.area,
     data.opsId,
+    data.osId,
     data.employmentStatus,
     data.position,
     data.firstWorkDate,
@@ -464,7 +531,13 @@ function buildSubmissionRow(submissionId, data, validation, ktpUrl, suratKuasaUr
     data.ownershipStatus,
     ktpUrl,
     suratKuasaUrl,
-    familyCardUrl
+    familyCardUrl,
+    employeeDocuments.personalPhoto,
+    employeeDocuments.diploma,
+    employeeDocuments.npwp,
+    employeeDocuments.bpjsHealth,
+    employeeDocuments.bpjsEmployment,
+    employeeDocuments.domicileLetter
   ];
 }
 

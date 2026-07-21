@@ -4,6 +4,7 @@ export const MAX_FILE_SIZE = 5 * 1024 * 1024;
 export const KTP_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 export const FAMILY_CARD_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 export const POWER_OF_ATTORNEY_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+export const EMPLOYEE_DOCUMENT_MIME_TYPES = ['image/jpeg', 'image/png'];
 
 const COMPRESSED_IMAGE_MAX_DIMENSION = 1600;
 const COMPRESSED_IMAGE_QUALITY = 0.72;

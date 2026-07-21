@@ -1,4 +1,3 @@
-export type EmploymentStatus = 'DWO' | 'DWR' | 'DEDICATED';
 export type Position = 'Shorter';
 export type EmergencyRelationship = 'Saudara Kandung' | 'Saudara' | 'Ibu' | 'Ayah';
 export type OwnershipStatus = 'PRIBADI' | 'ORANG LAIN';
@@ -59,7 +58,8 @@ export interface PayrollFormValues {
   placement: string;
   area: string;
   opsId: string;
-  employmentStatus: EmploymentStatus | '';
+  osId: string;
+  employmentStatus: string;
   position: Position | '';
   firstWorkDate: string;
   bankCode: string;
@@ -70,22 +70,36 @@ export interface PayrollFormValues {
   ownershipStatus: OwnershipStatus | '';
   ktpFile: FileList;
   familyCardFile: FileList;
+  personalPhotoFile?: FileList;
+  diplomaFile?: FileList;
+  npwpFile?: FileList;
+  bpjsHealthFile?: FileList;
+  bpjsEmploymentFile?: FileList;
+  domicileLetterFile?: FileList;
   powerOfAttorneyFile?: FileList;
   dataAgreement: boolean;
   website?: string;
   formStartedAt: string;
 }
 
+type UploadFieldNames = 'ktpFile' | 'familyCardFile' | 'powerOfAttorneyFile' | 'personalPhotoFile' | 'diplomaFile' | 'npwpFile' | 'bpjsHealthFile' | 'bpjsEmploymentFile' | 'domicileLetterFile';
+
 export interface PayrollSubmitPayload {
   origin: string;
   submittedAt: string;
   website: string;
-  data: Omit<PayrollFormValues, 'ktpFile' | 'familyCardFile' | 'powerOfAttorneyFile' | 'dataAgreement' | 'bankCode' | 'bankName'> & {
+  data: Omit<PayrollFormValues, UploadFieldNames | 'dataAgreement' | 'bankCode' | 'bankName'> & {
     bank: BankOption;
   };
   files: {
     ktp: UploadPayload;
     familyCard: UploadPayload;
+    personalPhoto: UploadPayload | null;
+    diploma: UploadPayload | null;
+    npwp: UploadPayload | null;
+    bpjsHealth: UploadPayload | null;
+    bpjsEmployment: UploadPayload | null;
+    domicileLetter: UploadPayload | null;
     powerOfAttorney: UploadPayload | null;
   };
 }
