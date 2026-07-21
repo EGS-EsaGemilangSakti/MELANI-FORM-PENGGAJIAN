@@ -569,7 +569,7 @@ export function PayrollForm() {
             <PlacementField register={register} setValue={setValue} watch={watch} error={errors.placement?.message} />
             <EmploymentStatusField register={register} setValue={setValue} watch={watch} error={errors.employmentStatus?.message} />
             <AreaAndOpsFields register={register} setValue={setValue} watch={watch} errors={{ area: errors.area?.message, opsId: errors.opsId?.message, osId: errors.osId?.message }} />
-            {summaryValues.placement === 'SHOPEE EXPRESS' ? <DivisionField register={register} error={errors.division?.message} /> : null}
+            {summaryValues.placement === 'SHOPEE EXPRESS' ? <DivisionField register={register} setValue={setValue} watch={watch} error={errors.division?.message} /> : null}
             <PositionField register={register} setValue={setValue} watch={watch} error={errors.position?.message} />
             <FirstWorkDateField register={register} error={errors.firstWorkDate?.message} />
           </StepCard>
