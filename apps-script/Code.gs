@@ -1,5 +1,6 @@
 const SHEET_NAME = 'Payroll Submissions';
 const AUDIT_SHEET_NAME = 'Audit Log';
+const REVISION_SHEET_NAME = 'Revisi Data Karyawan';
 const API_CO_ID_URL = 'https://use.api.co.id/validation/bank';
 const REGIONAL_API_BASE_URL = 'https://use.api.co.id/regional/indonesia';
 const HEADERS = [
@@ -22,6 +23,7 @@ const HEADERS = [
   'PTKP',
   'Penempatan',
   'Area',
+  'Divisi',
   'ID OPS',
   'ID OS',
   'Status Karyawan',
@@ -76,6 +78,7 @@ const ALLOWED_FIELDS = [
   'emergencyRelationship',
   'placement',
   'area',
+  'division',
   'opsId',
   'osId',
   'employmentStatus',
@@ -91,7 +94,8 @@ const ALLOWED_FIELDS = [
 const PLACEMENTS = ['SHOPEE EXPRESS', 'WAHANA EXPRESS'];
 const MIN_ACCOUNT_VALIDATION_SCORE = 10;
 const WAHANA_EMPLOYMENT_STATUSES = ['Daily Worker', 'DWO', 'DEDICATED'];
-const SHOPEE_EMPLOYMENT_STATUSES = [
+const SHOPEE_EMPLOYMENT_STATUSES = ['Daily Worker (DW)', 'Dedicated'];
+const SHOPEE_POSITIONS = [
   'OPERATOR DEDICATED',
   'TRACER ADMIN',
   'OPERATOR CACHE',
@@ -111,7 +115,8 @@ const SHOPEE_EMPLOYMENT_STATUSES = [
   'DRIVER INTRAHUB',
   'Daily Worker'
 ];
-const POSITIONS = ['Shorter'];
+const WAHANA_POSITIONS = ['Shorter'];
+const DIVISIONS = ['LM', 'FM', 'SOC', 'MM', 'INV', 'DS', 'SM', 'RETURN', 'FLEET', 'SERVICE POINT'];
 const EMERGENCY_RELATIONSHIPS = ['Saudara Kandung', 'Saudara', 'Ibu', 'Ayah'];
 const OWNERSHIP_STATUSES = ['PRIBADI', 'ORANG LAIN'];
 const GENDERS = ['Laki-laki', 'Perempuan'];
@@ -182,6 +187,8 @@ function handleSubmitPayroll(payload) {
   }
   validateTimestamp(payload.submittedAt, payload.data && payload.data.formStartedAt);
   const data = validatePayload(payload.data || {});
+  const submissionType = payload.submissionType;
+  if (submissionType !== 'NEW' && submissionType !== 'REVISION') throw new Error('Jenis pengisian tidak valid');
   const backendValidation = validateBankAccount({
     origin: payload.origin,
     bank_code: data.bank.bank_code,
@@ -194,6 +201,10 @@ function handleSubmitPayroll(payload) {
     return { success: false, message: 'Rekening tidak valid. Score minimal ' + MIN_ACCOUNT_VALIDATION_SCORE };
   }
 
+  const submissionLock = LockService.getScriptLock();
+  submissionLock.waitLock(30000);
+  try {
+  assertOpsSubmissionLimit(data.opsId);
   const submissionId = generateUUID();
   if (data.ownershipStatus === 'ORANG LAIN' && !(payload.files && payload.files.powerOfAttorney)) {
     throw new Error('Surat kuasa wajib diunggah');
@@ -201,7 +212,7 @@ function handleSubmitPayroll(payload) {
   if (data.placement === 'SHOPEE EXPRESS') {
     if (!(payload.files && payload.files.personalPhoto)) throw new Error('Foto diri wajib diunggah');
     if (!(payload.files && payload.files.diploma)) throw new Error('Ijazah wajib diunggah');
-    if (data.employmentStatus !== 'Daily Worker') {
+    if (data.employmentStatus === 'Dedicated') {
       if (!payload.files.npwp) throw new Error('NPWP wajib diunggah');
       if (!payload.files.bpjsHealth) throw new Error('BPJS Kesehatan wajib diunggah');
       if (!payload.files.bpjsEmployment) throw new Error('BPJS Ketenagakerjaan wajib diunggah');
@@ -226,7 +237,7 @@ function handleSubmitPayroll(payload) {
     domicileLetter: uploadOptionalToDrive(payload.files && payload.files.domicileLetter, 'domicileLetter', submissionId)
   };
 
-  saveToSpreadsheet(submissionId, data, backendValidation, ktpFile.url, suratKuasaFile.url, familyCardFile.url, employeeDocuments);
+  saveToSpreadsheet(submissionId, data, backendValidation, ktpFile.url, suratKuasaFile.url, familyCardFile.url, employeeDocuments, submissionType);
   logSubmission('SUCCESS', submissionId, 'Data berhasil disimpan');
 
   return {
@@ -234,6 +245,9 @@ function handleSubmitPayroll(payload) {
     submissionId: submissionId,
     message: 'Data berhasil disimpan'
   };
+  } finally {
+    submissionLock.releaseLock();
+  }
 }
 
 function validatePayload(data) {
@@ -264,12 +278,14 @@ function validatePayload(data) {
   if (EMERGENCY_RELATIONSHIPS.indexOf(data.emergencyRelationship) === -1) throw new Error('Hubungan kontak darurat tidak valid');
   if (PLACEMENTS.indexOf(data.placement) === -1) throw new Error('Penempatan tidak valid');
   if (!/^[A-Z0-9 .,'()\/\-]+$/.test(data.area || '')) throw new Error('Area tidak valid');
+  if (data.placement === 'SHOPEE EXPRESS' && DIVISIONS.indexOf(data.division) === -1) throw new Error('Divisi tidak valid');
   if (data.placement === 'SHOPEE EXPRESS' && !/^\d+$/.test(data.opsId || '')) throw new Error('ID OPS Shopee hanya boleh berisi angka');
   if (data.placement === 'WAHANA EXPRESS' && !/^[A-Za-z0-9]+$/.test(data.opsId || '')) throw new Error('ID OPS Wahana hanya boleh berisi huruf dan angka');
   const allowedEmploymentStatuses = data.placement === 'SHOPEE EXPRESS' ? SHOPEE_EMPLOYMENT_STATUSES : WAHANA_EMPLOYMENT_STATUSES;
   if (allowedEmploymentStatuses.indexOf(data.employmentStatus) === -1) throw new Error('Status karyawan tidak sesuai penempatan');
-  if (data.placement === 'SHOPEE EXPRESS' && data.employmentStatus !== 'Daily Worker' && !/^[A-Za-z0-9]+$/.test(data.osId || '')) throw new Error('ID OS wajib diisi dengan huruf atau angka');
-  if (POSITIONS.indexOf(data.position) === -1) throw new Error('Posisi tidak valid');
+  if (data.placement === 'SHOPEE EXPRESS' && data.employmentStatus === 'Dedicated' && !/^[A-Za-z0-9]+$/.test(data.osId || '')) throw new Error('ID OS wajib diisi dengan huruf atau angka');
+  const allowedPositions = data.placement === 'SHOPEE EXPRESS' ? SHOPEE_POSITIONS : WAHANA_POSITIONS;
+  if (allowedPositions.indexOf(data.position) === -1) throw new Error('Posisi tidak sesuai penempatan');
   if (!/^\d{2}-\d{2}-\d{4}$/.test(data.firstWorkDate || '')) throw new Error('Tanggal kerja pertama tidak valid');
   if (!validateBank(data.bank)) throw new Error('Bank tidak valid');
   if (!/^\d{5,30}$/.test(data.accountNumber || '')) throw new Error('Nomor rekening tidak valid');
@@ -306,8 +322,9 @@ function validatePayload(data) {
     emergencyRelationship: data.emergencyRelationship,
     placement: data.placement,
     area: sanitizeInput(data.area).toUpperCase(),
+    division: data.placement === 'SHOPEE EXPRESS' ? data.division : '',
     opsId: data.placement === 'SHOPEE EXPRESS' ? 'Ops' + String(data.opsId) : sanitizeInput(data.opsId),
-    osId: data.placement === 'SHOPEE EXPRESS' && data.employmentStatus !== 'Daily Worker' ? sanitizeInput(data.osId).toUpperCase() : '',
+    osId: data.placement === 'SHOPEE EXPRESS' && data.employmentStatus === 'Dedicated' ? sanitizeInput(data.osId).toUpperCase() : '',
     employmentStatus: data.employmentStatus,
     position: data.position,
     firstWorkDate: data.firstWorkDate,
@@ -481,12 +498,35 @@ function uploadOptionalToDrive(filePayload, type, submissionId) {
   return filePayload ? uploadToDrive(filePayload, type, submissionId).url : '';
 }
 
-function saveToSpreadsheet(submissionId, data, validation, ktpUrl, suratKuasaUrl, familyCardUrl, employeeDocuments) {
+function assertOpsSubmissionLimit(opsId) {
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var submissionCount = 0;
+  [SHEET_NAME, REVISION_SHEET_NAME].forEach(function (sheetName) {
+    const sheet = spreadsheet.getSheetByName(sheetName);
+    if (!sheet || sheet.getLastRow() < 2) return;
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const opsColumnIndex = headers.indexOf('ID OPS');
+    if (opsColumnIndex === -1) return;
+    const values = sheet.getRange(2, opsColumnIndex + 1, sheet.getLastRow() - 1, 1).getDisplayValues();
+    values.forEach(function (row) {
+      if (String(row[0] || '').trim().toUpperCase() === String(opsId || '').trim().toUpperCase()) submissionCount += 1;
+    });
+  });
+  if (submissionCount >= 2) throw new Error('ID OPS sudah mencapai batas maksimal 2 kali pengisian');
+}
+
+function saveToSpreadsheet(submissionId, data, validation, ktpUrl, suratKuasaUrl, familyCardUrl, employeeDocuments, submissionType) {
   const row = buildSubmissionRow(submissionId, data, validation, ktpUrl, suratKuasaUrl, familyCardUrl, employeeDocuments);
-  const mainSheet = getSheet(SHEET_NAME);
-  createSpreadsheetHeaders();
-  mainSheet.appendRow(row);
-  applyDuplicateNikFormattingToSheet(mainSheet);
+  const destinationSheet = getSheet(submissionType === 'REVISION' ? REVISION_SHEET_NAME : SHEET_NAME);
+  createSpreadsheetHeadersForSheet(destinationSheet);
+  destinationSheet.appendRow(row);
+  applyDuplicateNikFormattingToSheet(destinationSheet);
+
+  if (submissionType === 'REVISION') {
+    const placementColumn = HEADERS.indexOf('Penempatan') + 1;
+    if (destinationSheet.getLastRow() > 2) destinationSheet.getRange(2, 1, destinationSheet.getLastRow() - 1, HEADERS.length).sort(placementColumn);
+    return;
+  }
 
   const placementSheet = getSheet(getPlacementSheetName(data.placement));
   createSpreadsheetHeadersForSheet(placementSheet);
@@ -515,6 +555,7 @@ function buildSubmissionRow(submissionId, data, validation, ktpUrl, suratKuasaUr
     data.ptkpCode,
     data.placement,
     data.area,
+    data.division,
     data.opsId,
     data.osId,
     data.employmentStatus,

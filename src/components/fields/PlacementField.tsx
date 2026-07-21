@@ -33,6 +33,8 @@ export function PlacementField({ register, setValue, watch, error }: PlacementFi
           setValue('employmentStatus', '', { shouldDirty: true, shouldValidate: true });
           setValue('opsId', '', { shouldDirty: true, shouldValidate: true });
           setValue('osId', '', { shouldDirty: true, shouldValidate: true });
+          setValue('division', '', { shouldDirty: true, shouldValidate: true });
+          setValue('position', '', { shouldDirty: true, shouldValidate: true });
         }}
       />
     </FieldShell>

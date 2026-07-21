@@ -36,7 +36,7 @@ export function AreaAndOpsFields({ register, setValue, watch, errors }: Props) {
   const placement = watch('placement');
   const employmentStatus = watch('employmentStatus');
   const shopee = placement === 'SHOPEE EXPRESS';
-  const requiresOsId = shopee && Boolean(employmentStatus) && employmentStatus !== 'Daily Worker';
+  const requiresOsId = shopee && employmentStatus === 'Dedicated';
   return <>
     <FieldShell label="Area" error={errors.area}>
       <input className={inputClass} placeholder="AREA" {...register('area')} onChange={(event) => setValue('area', uppercase(event.target.value), { shouldDirty: true, shouldValidate: true })} />

@@ -1,8 +1,10 @@
 function setup() {
   createSpreadsheetHeaders();
+  createSpreadsheetHeadersForSheet(getSheet(REVISION_SHEET_NAME));
   createPlacementSheets();
   syncPlacementSheetsFromMain();
   applyDuplicateNikFormattingToPayrollSheets();
+  applyDuplicateNikFormattingToSheet(getSheet(REVISION_SHEET_NAME));
   DriveApp.getFolderById(UPLOADS_FOLDER_ID);
   DriveApp.getFolderById(KTP_FOLDER_ID);
   DriveApp.getFolderById(KK_FOLDER_ID);

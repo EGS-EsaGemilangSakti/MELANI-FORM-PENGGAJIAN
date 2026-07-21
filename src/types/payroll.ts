@@ -1,4 +1,3 @@
-export type Position = 'Shorter';
 export type EmergencyRelationship = 'Saudara Kandung' | 'Saudara' | 'Ibu' | 'Ayah';
 export type OwnershipStatus = 'PRIBADI' | 'ORANG LAIN';
 export type Gender = 'Laki-laki' | 'Perempuan';
@@ -57,10 +56,11 @@ export interface PayrollFormValues {
   emergencyRelationship: EmergencyRelationship | '';
   placement: string;
   area: string;
+  division: string;
   opsId: string;
   osId: string;
   employmentStatus: string;
-  position: Position | '';
+  position: string;
   firstWorkDate: string;
   bankCode: string;
   bankName: string;
@@ -88,6 +88,7 @@ export interface PayrollSubmitPayload {
   origin: string;
   submittedAt: string;
   website: string;
+  submissionType: 'NEW' | 'REVISION';
   data: Omit<PayrollFormValues, UploadFieldNames | 'dataAgreement' | 'bankCode' | 'bankName'> & {
     bank: BankOption;
   };

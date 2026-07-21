@@ -25,6 +25,7 @@ import { BirthPlaceField } from '../fields/BirthPlaceField';
 import { EmailField } from '../fields/EmailField';
 import { EmploymentStatusField } from '../fields/EmploymentStatusField';
 import { EmployeeDocumentUploadField } from '../fields/EmployeeDocumentUploadField';
+import { DivisionField } from '../fields/DivisionField';
 import { FirstWorkDateField } from '../fields/FirstWorkDateField';
 import { FamilyCardUploadField } from '../fields/FamilyCardUploadField';
 import { FullNameField } from '../fields/FullNameField';
@@ -80,6 +81,7 @@ const stepFields = {
   2: [
     'placement',
     'area',
+    'division',
     'opsId',
     'osId',
     'employmentStatus',
@@ -134,6 +136,7 @@ function getEmptyFormValues(): DefaultValues<PayrollFormValues> {
     emergencyRelationship: '',
     placement: '',
     area: '',
+    division: '',
     opsId: '',
     osId: '',
     employmentStatus: '',
@@ -301,6 +304,8 @@ function SubmitLoadingOverlay() {
 export function PayrollForm() {
   const persistedDraft = useMemo(loadPersistedDraft, []);
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(persistedDraft.currentStep ?? 1);
+  const [pendingValues, setPendingValues] = useState<PayrollFormValues | null>(null);
+  const [selectedSubmissionType, setSelectedSubmissionType] = useState<'NEW' | 'REVISION' | null>(null);
   const submitLock = useRef(false);
   const skipDraftPersistRef = useRef(false);
   const validateMutation = useValidateBank();
@@ -396,12 +401,16 @@ export function PayrollForm() {
   };
 
   const onSubmit = async (values: PayrollFormValues) => {
+    setPendingValues(values);
+    setSelectedSubmissionType(null);
+  };
+
+  const submitConfirmed = async (values: PayrollFormValues, submissionType: 'NEW' | 'REVISION') => {
     if (submitLock.current) return;
     if (currentStep !== 3) {
       toast.error('Selesaikan step saat ini sebelum mengirim data');
       return;
     }
-    if (!window.confirm('Kirim data penggajian karyawan?')) return;
     submitLock.current = true;
     try {
       const ktp = values.ktpFile.item(0);
@@ -418,6 +427,7 @@ export function PayrollForm() {
         origin: window.location.origin,
         submittedAt: nowIso(),
         website: sanitizeText(values.website || ''),
+        submissionType,
         data: {
           email: values.email,
           fullName: values.fullName,
@@ -448,6 +458,7 @@ export function PayrollForm() {
           emergencyRelationship: values.emergencyRelationship,
           placement: values.placement,
           area: values.area,
+          division: values.division,
           opsId: values.opsId,
           osId: values.osId,
           employmentStatus: values.employmentStatus,
@@ -479,6 +490,8 @@ export function PayrollForm() {
       clearPersistedDraft();
       reset(getEmptyFormValues());
       setCurrentStep(1);
+      setPendingValues(null);
+      setSelectedSubmissionType(null);
       window.setTimeout(() => {
         skipDraftPersistRef.current = false;
       }, 0);
@@ -492,6 +505,25 @@ export function PayrollForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-10 px-5 pb-28 pt-6 sm:px-8" noValidate>
       {isSubmitLoading ? <SubmitLoadingOverlay /> : null}
+      {pendingValues ? <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm">
+        <div role="dialog" aria-modal="true" aria-labelledby="submission-dialog-title" className="w-full max-w-md rounded-2xl border border-[#f2ca50]/25 bg-[#201f1f] p-6 shadow-2xl">
+          <h2 id="submission-dialog-title" className="text-2xl font-semibold text-white">{selectedSubmissionType ? 'Konfirmasi Submit' : 'Pilih Jenis Pengisian'}</h2>
+          {selectedSubmissionType ? <>
+            <p className="mt-3 leading-7 text-[#d0c5af]">Pastikan seluruh data {selectedSubmissionType === 'REVISION' ? 'yang direvisi' : 'karyawan baru'} sudah benar sebelum dikirim.</p>
+            <div className="mt-6 flex gap-3">
+              <button type="button" className="flex-1 rounded-xl border border-[#f2ca50]/30 px-4 py-3 font-semibold text-[#f2ca50]" onClick={() => setSelectedSubmissionType(null)}>Kembali</button>
+              <button type="button" className="flex-1 rounded-xl bg-[#f2ca50] px-4 py-3 font-bold text-[#3c2f00]" onClick={() => void submitConfirmed(pendingValues, selectedSubmissionType)}>Submit</button>
+            </div>
+          </> : <>
+            <p className="mt-3 leading-7 text-[#d0c5af]">Pilih tujuan pengiriman data ini.</p>
+            <div className="mt-6 grid gap-3">
+              <button type="button" className="rounded-xl bg-[#f2ca50] px-4 py-3 font-bold text-[#3c2f00]" onClick={() => setSelectedSubmissionType('NEW')}>Karyawan Baru</button>
+              <button type="button" className="rounded-xl border border-[#f2ca50]/40 px-4 py-3 font-semibold text-[#f2ca50]" onClick={() => setSelectedSubmissionType('REVISION')}>Revisi Data Karyawan</button>
+              <button type="button" className="px-4 py-2 text-sm text-[#d0c5af]" onClick={() => setPendingValues(null)}>Batal</button>
+            </div>
+          </>}
+        </div>
+      </div> : null}
       <input type="text" className="hidden" tabIndex={-1} autoComplete="off" {...register('website')} />
 
       <section className="space-y-8 text-center">
@@ -537,7 +569,8 @@ export function PayrollForm() {
             <PlacementField register={register} setValue={setValue} watch={watch} error={errors.placement?.message} />
             <EmploymentStatusField register={register} setValue={setValue} watch={watch} error={errors.employmentStatus?.message} />
             <AreaAndOpsFields register={register} setValue={setValue} watch={watch} errors={{ area: errors.area?.message, opsId: errors.opsId?.message, osId: errors.osId?.message }} />
-            <PositionField register={register} error={errors.position?.message} />
+            {summaryValues.placement === 'SHOPEE EXPRESS' ? <DivisionField register={register} error={errors.division?.message} /> : null}
+            <PositionField register={register} setValue={setValue} watch={watch} error={errors.position?.message} />
             <FirstWorkDateField register={register} error={errors.firstWorkDate?.message} />
           </StepCard>
 
@@ -576,7 +609,7 @@ export function PayrollForm() {
             <KtpUploadField register={register} watch={watch} trigger={trigger} error={errors.ktpFile?.message} />
             <FamilyCardUploadField register={register} watch={watch} trigger={trigger} error={errors.familyCardFile?.message} />
             {summaryValues.placement === 'SHOPEE EXPRESS' ? <EmployeeDocumentUploadField name="diplomaFile" label="Foto Ijazah" register={register} watch={watch} trigger={trigger} error={errors.diplomaFile?.message} /> : null}
-            {summaryValues.placement === 'SHOPEE EXPRESS' && summaryValues.employmentStatus !== 'Daily Worker' ? <>
+            {summaryValues.placement === 'SHOPEE EXPRESS' && summaryValues.employmentStatus === 'Dedicated' ? <>
               <EmployeeDocumentUploadField name="npwpFile" label="Foto NPWP" register={register} watch={watch} trigger={trigger} error={errors.npwpFile?.message} />
               <EmployeeDocumentUploadField name="bpjsHealthFile" label="Foto BPJS Kesehatan" register={register} watch={watch} trigger={trigger} error={errors.bpjsHealthFile?.message} />
               <EmployeeDocumentUploadField name="bpjsEmploymentFile" label="Foto BPJS Ketenagakerjaan" register={register} watch={watch} trigger={trigger} error={errors.bpjsEmploymentFile?.message} />
@@ -590,6 +623,7 @@ export function PayrollForm() {
               <SummaryItem label="Posisi" value={summaryValues.position} />
               <SummaryItem label="Status Karyawan" value={summaryValues.employmentStatus} />
               <SummaryItem label="Area" value={summaryValues.area} />
+              {summaryValues.division ? <SummaryItem label="Divisi" value={summaryValues.division} /> : null}
               <SummaryItem label="ID OPS" value={summaryValues.placement === 'SHOPEE EXPRESS' ? `Ops${summaryValues.opsId}` : summaryValues.opsId} />
               {summaryValues.osId ? <SummaryItem label="ID OS" value={summaryValues.osId} /> : null}
             </div>

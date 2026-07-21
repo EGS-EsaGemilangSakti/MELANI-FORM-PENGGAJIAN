@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { MIN_ACCOUNT_VALIDATION_SCORE } from '../constants/accountValidation';
 import { BANKS } from '../constants/banks';
-import { EMERGENCY_RELATIONSHIPS, EMPLOYMENT_STATUSES, OWNERSHIP_STATUSES, PLACEMENTS, POSITIONS, SHOPEE_EMPLOYMENT_STATUSES, WAHANA_EMPLOYMENT_STATUSES } from '../constants/placements';
+import { DIVISIONS, EMERGENCY_RELATIONSHIPS, EMPLOYMENT_STATUSES, OWNERSHIP_STATUSES, PLACEMENTS, POSITIONS, SHOPEE_EMPLOYMENT_STATUSES, SHOPEE_POSITIONS, WAHANA_EMPLOYMENT_STATUSES, WAHANA_POSITIONS } from '../constants/placements';
 import { GENDERS, MARITAL_STATUSES, PTKP_CODES, RELIGIONS } from '../constants/personal';
 import { EMPLOYEE_DOCUMENT_MIME_TYPES, FAMILY_CARD_MIME_TYPES, KTP_MIME_TYPES, MAX_FILE_SIZE, POWER_OF_ATTORNEY_MIME_TYPES } from '../utils/validators';
 
@@ -65,6 +65,7 @@ export const payrollSchema = z
     emergencyRelationship: z.enum(EMERGENCY_RELATIONSHIPS, { message: 'Hubungan kontak darurat wajib dipilih' }),
     placement: z.enum(PLACEMENTS, { message: 'Penempatan wajib dipilih' }),
     area: z.string().trim().min(1, 'Area wajib diisi').regex(/^[-A-Z0-9 .,'()/]+$/, 'Area harus menggunakan huruf kapital'),
+    division: z.string(),
     opsId: z.string().trim().min(1, 'ID OPS wajib diisi'),
     osId: z.string().trim(),
     employmentStatus: z.enum(EMPLOYMENT_STATUSES, { message: 'Status karyawan wajib dipilih' }),
@@ -100,7 +101,14 @@ export const payrollSchema = z
     if (!(allowedStatuses as readonly string[]).includes(data.employmentStatus)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['employmentStatus'], message: 'Status karyawan tidak sesuai penempatan' });
     }
-    if (data.placement === 'SHOPEE EXPRESS' && data.employmentStatus !== 'Daily Worker' && !/^[A-Za-z0-9]+$/.test(data.osId)) {
+    const allowedPositions = data.placement === 'SHOPEE EXPRESS' ? SHOPEE_POSITIONS : WAHANA_POSITIONS;
+    if (!(allowedPositions as readonly string[]).includes(data.position)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['position'], message: 'Posisi tidak sesuai penempatan' });
+    }
+    if (data.placement === 'SHOPEE EXPRESS' && !(DIVISIONS as readonly string[]).includes(data.division)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['division'], message: 'Divisi wajib dipilih' });
+    }
+    if (data.placement === 'SHOPEE EXPRESS' && data.employmentStatus === 'Dedicated' && !/^[A-Za-z0-9]+$/.test(data.osId)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['osId'], message: 'ID OS wajib diisi dengan huruf atau angka' });
     }
     if (data.placement === 'SHOPEE EXPRESS' && !/^\d+$/.test(data.opsId)) {
@@ -118,7 +126,7 @@ export const payrollSchema = z
     if (data.placement === 'SHOPEE EXPRESS') {
       validateUploadFile(data.personalPhotoFile, EMPLOYEE_DOCUMENT_MIME_TYPES, 'Foto Diri', 'Foto diri wajib diunggah', 'Foto diri wajib jpg, jpeg, atau png maksimal 5MB', ctx, ['personalPhotoFile']);
       validateUploadFile(data.diplomaFile, EMPLOYEE_DOCUMENT_MIME_TYPES, 'Ijazah', 'Ijazah wajib diunggah', 'Ijazah wajib jpg, jpeg, atau png maksimal 5MB', ctx, ['diplomaFile']);
-      if (data.employmentStatus !== 'Daily Worker') {
+      if (data.employmentStatus === 'Dedicated') {
         validateUploadFile(data.npwpFile, EMPLOYEE_DOCUMENT_MIME_TYPES, 'NPWP', 'NPWP wajib diunggah', 'NPWP wajib jpg, jpeg, atau png maksimal 5MB', ctx, ['npwpFile']);
         validateUploadFile(data.bpjsHealthFile, EMPLOYEE_DOCUMENT_MIME_TYPES, 'BPJS Kesehatan', 'BPJS Kesehatan wajib diunggah', 'BPJS Kesehatan wajib jpg, jpeg, atau png maksimal 5MB', ctx, ['bpjsHealthFile']);
         validateUploadFile(data.bpjsEmploymentFile, EMPLOYEE_DOCUMENT_MIME_TYPES, 'BPJS Ketenagakerjaan', 'BPJS Ketenagakerjaan wajib diunggah', 'BPJS Ketenagakerjaan wajib jpg, jpeg, atau png maksimal 5MB', ctx, ['bpjsEmploymentFile']);
