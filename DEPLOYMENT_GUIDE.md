@@ -34,7 +34,7 @@ UPLOADS_FOLDER_ID=1I2kf0hYDbJxL8-BBo6Hb_QN89DzTjupy
 KTP_FOLDER_ID=1pHmN-cyamYDlBhzRhOHOwPC5-7Z8E6mX
 KK_FOLDER_ID=1nWbT79ggh30ElK2aMwkiLt2vWCFO116a
 SURAT_KUASA_FOLDER_ID=1b24i2MQ7Juh_1Jwv_IvtdfAsNh-XoHRw
-ALLOWED_ORIGINS=http://localhost:5173,https://melani.ptesagemilangsakti.com
+ALLOWED_ORIGINS=http://localhost:5173,https://database.ptesagemilangsakti.com
 ```
 
 `API_CO_ID_KEY` diisi di Script Properties Google Apps Script. Jangan isi API key di React, `.env` frontend, atau hardcode di file `.gs`. Gunakan origin final GitHub Pages yang benar untuk production.
@@ -84,7 +84,7 @@ npm run build
 Contoh `ALLOWED_ORIGINS` setelah GitHub Pages aktif:
 
 ```text
-http://localhost:5173,https://melani.ptesagemilangsakti.com
+http://localhost:5173,https://database.ptesagemilangsakti.com
 ```
 
 Jika GitHub Pages memakai path repository seperti `https://username.github.io/form-penggajian/`, origin yang dimasukkan tetap hanya:

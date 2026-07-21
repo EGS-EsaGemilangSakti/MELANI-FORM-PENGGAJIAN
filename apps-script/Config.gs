@@ -9,7 +9,7 @@ const UPLOADS_FOLDER_ID = SCRIPT_PROPERTIES.getProperty('UPLOADS_FOLDER_ID') || 
 const KTP_FOLDER_ID = SCRIPT_PROPERTIES.getProperty('KTP_FOLDER_ID') || DEFAULT_KTP_FOLDER_ID;
 const SURAT_KUASA_FOLDER_ID = SCRIPT_PROPERTIES.getProperty('SURAT_KUASA_FOLDER_ID') || DEFAULT_SURAT_KUASA_FOLDER_ID;
 const KK_FOLDER_ID = SCRIPT_PROPERTIES.getProperty('KK_FOLDER_ID') || DEFAULT_KK_FOLDER_ID;
-const DEFAULT_ALLOWED_ORIGINS = 'http://localhost:5173,https://melani.ptesagemilangsakti.com';
+const DEFAULT_ALLOWED_ORIGINS = 'http://localhost:5173,https://database.ptesagemilangsakti.com';
 const ALLOWED_ORIGINS = (SCRIPT_PROPERTIES.getProperty('ALLOWED_ORIGINS') || DEFAULT_ALLOWED_ORIGINS).split(',').map(function (origin) {
   return origin.trim();
 }).filter(String);
