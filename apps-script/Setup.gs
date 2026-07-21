@@ -3,6 +3,7 @@ function setup() {
   createPlacementSheets();
   syncPlacementSheetsFromMain();
   applyDuplicateNikFormattingToPayrollSheets();
+  DriveApp.getFolderById(UPLOADS_FOLDER_ID);
   DriveApp.getFolderById(KTP_FOLDER_ID);
   DriveApp.getFolderById(KK_FOLDER_ID);
   DriveApp.getFolderById(SURAT_KUASA_FOLDER_ID);

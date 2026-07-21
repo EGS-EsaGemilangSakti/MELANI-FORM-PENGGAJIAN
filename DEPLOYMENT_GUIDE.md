@@ -8,7 +8,7 @@
 
 ## 2. Siapkan Google Drive
 
-1. Buat folder `PAYROLL_UPLOADS`.
+1. Buat folder `NAMA FOLDER`.
 2. Di dalamnya buat folder `KTP`.
 3. Di dalamnya buat folder `SURAT_KUASA`.
 4. Salin folder ID dari URL masing-masing folder.
@@ -29,11 +29,12 @@ Masuk ke Project Settings, tambahkan:
 
 ```text
 API_CO_ID_KEY=api_key_api_co_id
-SPREADSHEET_ID=1zc_UbQqmy9aCt1CcKZSxRq276DHfrh46Hts36dGDT0c
-KTP_FOLDER_ID=1jhpp1WleiTwsxI0IltAkFylFGtFO-_AO
-KK_FOLDER_ID=17nmuTwWhI251H8iI3YcSL_dAdGuoKZ8V
-SURAT_KUASA_FOLDER_ID=1mqqs3jVAooV00rQpnD9OIHT-tI4NvEaA
-ALLOWED_ORIGINS=http://localhost:5173,https://egs-esagemilangsakti.github.io,https://form.ptesagemilangsakti.com
+SPREADSHEET_ID=1mUx6O2uR8X8xMuajKlocMSXHL86kwb1UbppoWMKPlUY
+UPLOADS_FOLDER_ID=1I2kf0hYDbJxL8-BBo6Hb_QN89DzTjupy
+KTP_FOLDER_ID=1pHmN-cyamYDlBhzRhOHOwPC5-7Z8E6mX
+KK_FOLDER_ID=1nWbT79ggh30ElK2aMwkiLt2vWCFO116a
+SURAT_KUASA_FOLDER_ID=1b24i2MQ7Juh_1Jwv_IvtdfAsNh-XoHRw
+ALLOWED_ORIGINS=http://localhost:5173,https://melani.ptesagemilangsakti.com
 ```
 
 `API_CO_ID_KEY` diisi di Script Properties Google Apps Script. Jangan isi API key di React, `.env` frontend, atau hardcode di file `.gs`. Gunakan origin final GitHub Pages yang benar untuk production.
@@ -83,7 +84,7 @@ npm run build
 Contoh `ALLOWED_ORIGINS` setelah GitHub Pages aktif:
 
 ```text
-http://localhost:5173,https://egs-esagemilangsakti.github.io,https://form.ptesagemilangsakti.com
+http://localhost:5173,https://melani.ptesagemilangsakti.com
 ```
 
 Jika GitHub Pages memakai path repository seperti `https://username.github.io/form-penggajian/`, origin yang dimasukkan tetap hanya:
