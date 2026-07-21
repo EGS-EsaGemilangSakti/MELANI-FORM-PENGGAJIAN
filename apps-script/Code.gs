@@ -12,11 +12,17 @@ const HEADERS = [
   'Tempat Lahir',
   'Tanggal Lahir',
   'Nomor Telepon',
+  'Ibu Kandung',
+  'Kontak Darurat',
+  'Nama Kontak Darurat',
+  'Hubungan Kontak Darurat',
   'Jenis Kelamin',
   'Status Pernikahan',
   'Agama',
   'PTKP',
   'Penempatan',
+  'Area',
+  'ID OPS',
   'Status Karyawan',
   'Posisi',
   'Tanggal Kerja Pertama',
@@ -57,7 +63,13 @@ const ALLOWED_FIELDS = [
   'religion',
   'ptkpCode',
   'phone',
+  'motherName',
+  'emergencyContact',
+  'emergencyContactName',
+  'emergencyRelationship',
   'placement',
+  'area',
+  'opsId',
   'employmentStatus',
   'position',
   'firstWorkDate',
@@ -68,10 +80,11 @@ const ALLOWED_FIELDS = [
   'formStartedAt',
   'bank'
 ];
-const PLACEMENTS = ['JNT CARGO CIREBON', 'MONDE', 'JNT SEMARANG', 'JNT TEGAL', 'JNT PATI', 'JNT EXPRESS MEDAN', 'JNT SMQ 05', 'JNT SMQ 99', 'OB HQ', 'SPRINTER JET JKT', 'GO TO BALI', 'CARGO BKI', 'JNT CARGO SURABAYA', 'JNT CARGO LAMPUNG', 'JNT EXPRESS LAMPUNG', 'JNT EXPRESS PEKANBARU', 'JNT CARGO PKU', 'JNT JKM CARGO CAKUNG', 'JNT CARGO KOSAMBI', 'JNT PALANGKARAYA', 'MEDQUEST', 'PT BIYAN BEKASI', 'WAHANA EXPRESS'];
-const MIN_ACCOUNT_VALIDATION_SCORE = 9;
-const EMPLOYMENT_STATUSES = ['Freelance', 'Kontrak', 'Reguler'];
-const POSITIONS = ['Admin', 'Kordinator', 'Sorter', 'Driver', 'Kurir'];
+const PLACEMENTS = ['SHOPEE EXPRESS', 'WAHANA EXPRESS'];
+const MIN_ACCOUNT_VALIDATION_SCORE = 10;
+const EMPLOYMENT_STATUSES = ['DWO', 'DWR', 'DEDICATED'];
+const POSITIONS = ['Shorter'];
+const EMERGENCY_RELATIONSHIPS = ['Saudara Kandung', 'Saudara', 'Ibu', 'Ayah'];
 const OWNERSHIP_STATUSES = ['PRIBADI', 'ORANG LAIN'];
 const GENDERS = ['Laki-laki', 'Perempuan'];
 const MARITAL_STATUSES = ['Menikah', 'Belum Menikah', 'Cerai Hidup', 'Cerai Mati'];
@@ -198,7 +211,14 @@ function validatePayload(data) {
   if (RELIGIONS.indexOf(data.religion) === -1) throw new Error('Agama tidak valid');
   if (PTKP_CODES.indexOf(data.ptkpCode) === -1) throw new Error('PTKP tidak valid');
   if (!validatePhone(data.phone)) throw new Error('Nomor telepon tidak valid');
+  if (!/^[A-Z .'-]+$/.test(data.motherName || '')) throw new Error('Nama ibu kandung tidak valid');
+  if (!validatePhone(data.emergencyContact)) throw new Error('Kontak darurat tidak valid');
+  if (!/^[A-Z .'-]+$/.test(data.emergencyContactName || '')) throw new Error('Nama kontak darurat tidak valid');
+  if (EMERGENCY_RELATIONSHIPS.indexOf(data.emergencyRelationship) === -1) throw new Error('Hubungan kontak darurat tidak valid');
   if (PLACEMENTS.indexOf(data.placement) === -1) throw new Error('Penempatan tidak valid');
+  if (!/^[A-Z0-9 .,'()\/\-]+$/.test(data.area || '')) throw new Error('Area tidak valid');
+  if (data.placement === 'SHOPEE EXPRESS' && !/^\d+$/.test(data.opsId || '')) throw new Error('ID OPS Shopee hanya boleh berisi angka');
+  if (data.placement === 'WAHANA EXPRESS' && !/^[A-Za-z0-9]+$/.test(data.opsId || '')) throw new Error('ID OPS Wahana hanya boleh berisi huruf dan angka');
   if (EMPLOYMENT_STATUSES.indexOf(data.employmentStatus) === -1) throw new Error('Status karyawan tidak valid');
   if (POSITIONS.indexOf(data.position) === -1) throw new Error('Posisi tidak valid');
   if (!/^\d{2}-\d{2}-\d{4}$/.test(data.firstWorkDate || '')) throw new Error('Tanggal kerja pertama tidak valid');
@@ -231,7 +251,13 @@ function validatePayload(data) {
     religion: data.religion,
     ptkpCode: data.ptkpCode,
     phone: String(data.phone),
+    motherName: sanitizeInput(data.motherName).toUpperCase(),
+    emergencyContact: String(data.emergencyContact),
+    emergencyContactName: sanitizeInput(data.emergencyContactName).toUpperCase(),
+    emergencyRelationship: data.emergencyRelationship,
     placement: data.placement,
+    area: sanitizeInput(data.area).toUpperCase(),
+    opsId: data.placement === 'SHOPEE EXPRESS' ? 'Ops' + String(data.opsId) : sanitizeInput(data.opsId),
     employmentStatus: data.employmentStatus,
     position: data.position,
     firstWorkDate: data.firstWorkDate,
@@ -413,11 +439,17 @@ function buildSubmissionRow(submissionId, data, validation, ktpUrl, suratKuasaUr
     data.birthPlace,
     data.birthDate,
     "'" + data.phone,
+    data.motherName,
+    "'" + data.emergencyContact,
+    data.emergencyContactName,
+    data.emergencyRelationship,
     data.gender,
     data.maritalStatus,
     data.religion,
     data.ptkpCode,
     data.placement,
+    data.area,
+    data.opsId,
     data.employmentStatus,
     data.position,
     data.firstWorkDate,

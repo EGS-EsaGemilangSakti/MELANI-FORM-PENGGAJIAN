@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { MIN_ACCOUNT_VALIDATION_SCORE } from '../constants/accountValidation';
 import { BANKS } from '../constants/banks';
-import { EMPLOYMENT_STATUSES, OWNERSHIP_STATUSES, PLACEMENTS, POSITIONS } from '../constants/placements';
+import { EMERGENCY_RELATIONSHIPS, EMPLOYMENT_STATUSES, OWNERSHIP_STATUSES, PLACEMENTS, POSITIONS } from '../constants/placements';
 import { GENDERS, MARITAL_STATUSES, PTKP_CODES, RELIGIONS } from '../constants/personal';
 import { FAMILY_CARD_MIME_TYPES, KTP_MIME_TYPES, MAX_FILE_SIZE, POWER_OF_ATTORNEY_MIME_TYPES } from '../utils/validators';
 
@@ -59,7 +59,13 @@ export const payrollSchema = z
     religion: z.enum(RELIGIONS, { message: 'Agama wajib dipilih' }),
     ptkpCode: z.enum(PTKP_CODES, { message: 'PTKP wajib dipilih' }),
     phone: z.string().regex(/^\d{10,15}$/, 'Nomor telepon wajib 10-15 digit'),
+    motherName: z.string().trim().min(1, 'Nama ibu kandung wajib diisi').regex(/^[A-Z .'-]+$/, 'Nama ibu kandung harus menggunakan huruf kapital'),
+    emergencyContact: z.string().regex(/^\d{10,15}$/, 'Kontak darurat wajib 10-15 digit angka'),
+    emergencyContactName: z.string().trim().min(1, 'Nama kontak darurat wajib diisi').regex(/^[A-Z .'-]+$/, 'Nama kontak darurat harus menggunakan huruf kapital'),
+    emergencyRelationship: z.enum(EMERGENCY_RELATIONSHIPS, { message: 'Hubungan kontak darurat wajib dipilih' }),
     placement: z.enum(PLACEMENTS, { message: 'Penempatan wajib dipilih' }),
+    area: z.string().trim().min(1, 'Area wajib diisi').regex(/^[-A-Z0-9 .,'()/]+$/, 'Area harus menggunakan huruf kapital'),
+    opsId: z.string().trim().min(1, 'ID OPS wajib diisi'),
     employmentStatus: z.enum(EMPLOYMENT_STATUSES, { message: 'Status karyawan wajib dipilih' }),
     position: z.enum(POSITIONS, { message: 'Posisi wajib dipilih' }),
     firstWorkDate: z.string().min(1, 'Tanggal kerja pertama wajib diisi'),
@@ -83,6 +89,12 @@ export const payrollSchema = z
     formStartedAt: z.string().min(1),
   })
   .superRefine((data, ctx) => {
+    if (data.placement === 'SHOPEE EXPRESS' && !/^\d+$/.test(data.opsId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['opsId'], message: 'ID OPS Shopee hanya boleh berisi angka' });
+    }
+    if (data.placement === 'WAHANA EXPRESS' && !/^[A-Za-z0-9]+$/.test(data.opsId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['opsId'], message: 'ID OPS Wahana hanya boleh berisi huruf dan angka' });
+    }
     if (data.accountValidation.status !== 'VALID' || data.accountValidation.score === null || data.accountValidation.score < MIN_ACCOUNT_VALIDATION_SCORE) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['accountValidation'], message: `Rekening wajib divalidasi dengan score minimal ${MIN_ACCOUNT_VALIDATION_SCORE}` });
     }

@@ -1,5 +1,6 @@
-export type EmploymentStatus = 'Freelance' | 'Kontrak';
-export type Position = 'Admin' | 'Kordinator' | 'Sorter' | 'Driver' | 'Kurir';
+export type EmploymentStatus = 'DWO' | 'DWR' | 'DEDICATED';
+export type Position = 'Shorter';
+export type EmergencyRelationship = 'Saudara Kandung' | 'Saudara' | 'Ibu' | 'Ayah';
 export type OwnershipStatus = 'PRIBADI' | 'ORANG LAIN';
 export type Gender = 'Laki-laki' | 'Perempuan';
 export type MaritalStatus = 'Menikah' | 'Belum Menikah' | 'Cerai Hidup' | 'Cerai Mati';
@@ -51,7 +52,13 @@ export interface PayrollFormValues {
   religion: Religion | '';
   ptkpCode: PtkpCode | '';
   phone: string;
+  motherName: string;
+  emergencyContact: string;
+  emergencyContactName: string;
+  emergencyRelationship: EmergencyRelationship | '';
   placement: string;
+  area: string;
+  opsId: string;
   employmentStatus: EmploymentStatus | '';
   position: Position | '';
   firstWorkDate: string;

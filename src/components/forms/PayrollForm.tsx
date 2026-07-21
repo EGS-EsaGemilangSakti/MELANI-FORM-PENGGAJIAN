@@ -17,6 +17,7 @@ import { fileToBase64Payload } from '../../utils/validators';
 import { AccountNumberField } from '../fields/AccountNumberField';
 import { AccountOwnerField } from '../fields/AccountOwnerField';
 import { AccountValidationResult } from '../fields/AccountValidationResult';
+import { AreaAndOpsFields, PersonalEmergencyFields } from '../fields/AdditionalEmployeeFields';
 import { AddressField } from '../fields/AddressField';
 import { BankField } from '../fields/BankField';
 import { BirthDateField } from '../fields/BirthDateField';
@@ -51,6 +52,10 @@ const stepFields = {
     'fullName',
     'nik',
     'phone',
+    'motherName',
+    'emergencyContact',
+    'emergencyContactName',
+    'emergencyRelationship',
     'birthPlaceCode',
     'birthPlace',
     'birthPlaceProvince',
@@ -73,6 +78,8 @@ const stepFields = {
   ],
   2: [
     'placement',
+    'area',
+    'opsId',
     'employmentStatus',
     'position',
     'firstWorkDate',
@@ -119,7 +126,13 @@ function getEmptyFormValues(): DefaultValues<PayrollFormValues> {
     religion: '',
     ptkpCode: '',
     phone: '',
+    motherName: '',
+    emergencyContact: '',
+    emergencyContactName: '',
+    emergencyRelationship: '',
     placement: '',
+    area: '',
+    opsId: '',
     employmentStatus: '',
     position: '',
     firstWorkDate: '',
@@ -414,7 +427,13 @@ export function PayrollForm() {
           religion: values.religion,
           ptkpCode: values.ptkpCode,
           phone: values.phone,
+          motherName: values.motherName,
+          emergencyContact: values.emergencyContact,
+          emergencyContactName: values.emergencyContactName,
+          emergencyRelationship: values.emergencyRelationship,
           placement: values.placement,
+          area: values.area,
+          opsId: values.opsId,
           employmentStatus: values.employmentStatus,
           position: values.position,
           firstWorkDate: toDisplayDate(values.firstWorkDate),
@@ -470,6 +489,12 @@ export function PayrollForm() {
             <FullNameField register={register} setValue={setValue} error={errors.fullName?.message} />
             <NikField register={register} setValue={setValue} error={errors.nik?.message} />
             <PhoneField register={register} setValue={setValue} error={errors.phone?.message} />
+            <PersonalEmergencyFields register={register} setValue={setValue} errors={{
+              motherName: errors.motherName?.message,
+              emergencyContact: errors.emergencyContact?.message,
+              emergencyContactName: errors.emergencyContactName?.message,
+              emergencyRelationship: errors.emergencyRelationship?.message,
+            }} />
             <BirthPlaceField setValue={setValue} watch={watch} error={errors.birthPlaceCode?.message || errors.birthPlace?.message || errors.birthPlaceProvince?.message} />
             <BirthDateField register={register} error={errors.birthDate?.message} />
             <GenderField register={register} error={errors.gender?.message} />
@@ -488,6 +513,7 @@ export function PayrollForm() {
         <div className="space-y-6">
           <StepCard title="Detail Penempatan" icon={<BriefcaseBusiness className="h-5 w-5 text-[#f2ca50]" />}>
             <PlacementField register={register} setValue={setValue} watch={watch} error={errors.placement?.message} />
+            <AreaAndOpsFields register={register} setValue={setValue} watch={watch} errors={{ area: errors.area?.message, opsId: errors.opsId?.message }} />
             <EmploymentStatusField register={register} error={errors.employmentStatus?.message} />
             <PositionField register={register} error={errors.position?.message} />
             <FirstWorkDateField register={register} error={errors.firstWorkDate?.message} />
@@ -533,6 +559,8 @@ export function PayrollForm() {
               <SummaryItem label="Nama Lengkap" value={summaryValues.fullName} />
               <SummaryItem label="Posisi" value={summaryValues.position} />
               <SummaryItem label="Status Karyawan" value={summaryValues.employmentStatus} />
+              <SummaryItem label="Area" value={summaryValues.area} />
+              <SummaryItem label="ID OPS" value={summaryValues.placement === 'SHOPEE EXPRESS' ? `Ops${summaryValues.opsId}` : summaryValues.opsId} />
             </div>
             <div className="space-y-6 md:col-span-2">
               <SummaryItem label="Email" value={summaryValues.email} />
