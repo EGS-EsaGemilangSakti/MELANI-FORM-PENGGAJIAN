@@ -625,7 +625,7 @@ export function PayrollForm() {
               <SummaryItem label="Area" value={summaryValues.area} />
               {summaryValues.division ? <SummaryItem label="Divisi" value={summaryValues.division} /> : null}
               <SummaryItem label="ID OPS" value={summaryValues.placement === 'SHOPEE EXPRESS' ? `Ops${summaryValues.opsId}` : summaryValues.opsId} />
-              {summaryValues.osId ? <SummaryItem label="ID OS" value={summaryValues.osId} /> : null}
+              {summaryValues.osId ? <SummaryItem label="ID OS" value={`Os${summaryValues.osId}`} /> : null}
             </div>
             <div className="space-y-6 md:col-span-2">
               <SummaryItem label="Email" value={summaryValues.email} />

@@ -283,7 +283,7 @@ function validatePayload(data) {
   if (data.placement === 'WAHANA EXPRESS' && !/^[A-Za-z0-9]+$/.test(data.opsId || '')) throw new Error('ID OPS Wahana hanya boleh berisi huruf dan angka');
   const allowedEmploymentStatuses = data.placement === 'SHOPEE EXPRESS' ? SHOPEE_EMPLOYMENT_STATUSES : WAHANA_EMPLOYMENT_STATUSES;
   if (allowedEmploymentStatuses.indexOf(data.employmentStatus) === -1) throw new Error('Status karyawan tidak sesuai penempatan');
-  if (data.placement === 'SHOPEE EXPRESS' && data.employmentStatus === 'Dedicated' && !/^[A-Za-z0-9]+$/.test(data.osId || '')) throw new Error('ID OS wajib diisi dengan huruf atau angka');
+  if (data.placement === 'SHOPEE EXPRESS' && data.employmentStatus === 'Dedicated' && !/^\d+$/.test(data.osId || '')) throw new Error('ID OS hanya boleh berisi angka');
   const allowedPositions = data.placement === 'SHOPEE EXPRESS' ? SHOPEE_POSITIONS : WAHANA_POSITIONS;
   if (allowedPositions.indexOf(data.position) === -1) throw new Error('Posisi tidak sesuai penempatan');
   if (!/^\d{2}-\d{2}-\d{4}$/.test(data.firstWorkDate || '')) throw new Error('Tanggal kerja pertama tidak valid');
@@ -324,7 +324,7 @@ function validatePayload(data) {
     area: sanitizeInput(data.area).toUpperCase(),
     division: data.placement === 'SHOPEE EXPRESS' ? data.division : '',
     opsId: data.placement === 'SHOPEE EXPRESS' ? 'Ops' + String(data.opsId) : sanitizeInput(data.opsId),
-    osId: data.placement === 'SHOPEE EXPRESS' && data.employmentStatus === 'Dedicated' ? sanitizeInput(data.osId).toUpperCase() : '',
+    osId: data.placement === 'SHOPEE EXPRESS' && data.employmentStatus === 'Dedicated' ? 'Os' + String(data.osId) : '',
     employmentStatus: data.employmentStatus,
     position: data.position,
     firstWorkDate: data.firstWorkDate,

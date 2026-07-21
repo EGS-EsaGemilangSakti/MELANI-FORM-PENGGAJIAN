@@ -48,7 +48,10 @@ export function AreaAndOpsFields({ register, setValue, watch, errors }: Props) {
       </div>
     </FieldShell>
     {requiresOsId ? <FieldShell label="ID OS" error={errors.osId}>
-      <input className={inputClass} placeholder="ID OS" {...register('osId')} onChange={(event) => setValue('osId', event.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase(), { shouldDirty: true, shouldValidate: true })} />
+      <div className="flex">
+        <span className="flex items-center border border-r-0 border-[#99907c]/20 bg-slate-100 px-3 text-[#1c1b1b]">Os</span>
+        <input className={inputClass} inputMode="numeric" placeholder="2131313" {...register('osId')} onChange={(event) => setValue('osId', event.target.value.replace(/\D/g, ''), { shouldDirty: true, shouldValidate: true })} />
+      </div>
     </FieldShell> : null}
   </>;
 }

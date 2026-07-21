@@ -108,8 +108,8 @@ export const payrollSchema = z
     if (data.placement === 'SHOPEE EXPRESS' && !(DIVISIONS as readonly string[]).includes(data.division)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['division'], message: 'Divisi wajib dipilih' });
     }
-    if (data.placement === 'SHOPEE EXPRESS' && data.employmentStatus === 'Dedicated' && !/^[A-Za-z0-9]+$/.test(data.osId)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['osId'], message: 'ID OS wajib diisi dengan huruf atau angka' });
+    if (data.placement === 'SHOPEE EXPRESS' && data.employmentStatus === 'Dedicated' && !/^\d+$/.test(data.osId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['osId'], message: 'ID OS hanya boleh berisi angka' });
     }
     if (data.placement === 'SHOPEE EXPRESS' && !/^\d+$/.test(data.opsId)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['opsId'], message: 'ID OPS Shopee hanya boleh berisi angka' });
