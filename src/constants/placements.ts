@@ -21,6 +21,7 @@ export const PLACEMENTS = [
   'JNT PALANGKARAYA',
   'MEDQUEST',
   'PT BIYAN BEKASI',
+  'WAHANA EXPRESS',
 ] as const;
 
 export const EMPLOYMENT_STATUSES = ['Freelance', 'Kontrak', 'Reguler'] as const;
