@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, ArrowRight, BarChart3, BriefcaseBusiness, Check, CloudUpload, Info, Loader2, MapPin, Send, ShieldCheck, WalletCards } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BarChart3, BriefcaseBusiness, Check, CheckCircle2, CloudUpload, Info, Loader2, MapPin, Send, ShieldCheck, WalletCards } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DefaultValues } from 'react-hook-form';
@@ -306,6 +306,7 @@ export function PayrollForm() {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(persistedDraft.currentStep ?? 1);
   const [pendingValues, setPendingValues] = useState<PayrollFormValues | null>(null);
   const [selectedSubmissionType, setSelectedSubmissionType] = useState<'NEW' | 'REVISION' | null>(null);
+  const [thankYouMessage, setThankYouMessage] = useState<string | null>(null);
   const submitLock = useRef(false);
   const skipDraftPersistRef = useRef(false);
   const validateMutation = useValidateBank();
@@ -485,13 +486,13 @@ export function PayrollForm() {
       };
       const response = await submitMutation.mutateAsync(payload);
       if (!response.success) throw new Error(response.message);
-      toast.success(`${response.message}: ${response.submissionId}`);
       skipDraftPersistRef.current = true;
       clearPersistedDraft();
       reset(getEmptyFormValues());
       setCurrentStep(1);
       setPendingValues(null);
       setSelectedSubmissionType(null);
+      setThankYouMessage(response.submissionId || 'Berhasil');
       window.setTimeout(() => {
         skipDraftPersistRef.current = false;
       }, 0);
@@ -522,6 +523,17 @@ export function PayrollForm() {
               <button type="button" className="px-4 py-2 text-sm text-[#d0c5af]" onClick={() => setPendingValues(null)}>Batal</button>
             </div>
           </>}
+        </div>
+      </div> : null}
+      {thankYouMessage ? <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 px-5 backdrop-blur-sm">
+        <div role="dialog" aria-modal="true" aria-labelledby="thank-you-dialog-title" className="w-full max-w-md rounded-2xl border border-[#f2ca50]/25 bg-[#201f1f] p-6 text-center shadow-2xl">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#f2ca50]/15">
+            <CheckCircle2 className="h-9 w-9 text-[#f2ca50]" />
+          </div>
+          <h2 id="thank-you-dialog-title" className="mt-5 text-2xl font-semibold text-white">Terima Kasih!</h2>
+          <p className="mt-3 leading-7 text-[#d0c5af]">Terima kasih telah mengisi Formulir Data Karyawan. Data Anda berhasil dikirim dan akan segera diproses oleh tim kami.</p>
+          <p className="mt-2 text-xs text-[#8f7d3c]">ID Pengajuan: {thankYouMessage}</p>
+          <button type="button" className="mt-6 w-full rounded-xl bg-[#f2ca50] px-4 py-3 font-bold text-[#3c2f00]" onClick={() => setThankYouMessage(null)}>Tutup</button>
         </div>
       </div> : null}
       <input type="text" className="hidden" tabIndex={-1} autoComplete="off" {...register('website')} />
