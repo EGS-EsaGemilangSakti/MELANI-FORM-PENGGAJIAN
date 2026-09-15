@@ -23,7 +23,7 @@ export const SHOPEE_POSITIONS = [
   'DRIVER INTRAHUB',
   'Daily Worker',
 ] as const;
-export const WAHANA_POSITIONS = ['Shorter'] as const;
+export const WAHANA_POSITIONS = ['Shorter', 'Driver'] as const;
 export const EMPLOYMENT_STATUSES = [...WAHANA_EMPLOYMENT_STATUSES, ...SHOPEE_EMPLOYMENT_STATUSES] as const;
 export const POSITIONS = [...WAHANA_POSITIONS, ...SHOPEE_POSITIONS] as const;
 export const DIVISIONS = ['LM', 'FM', 'SOC', 'MM', 'INV', 'DS', 'SM', 'RETURN', 'FLEET', 'SERVICE POINT'] as const;
