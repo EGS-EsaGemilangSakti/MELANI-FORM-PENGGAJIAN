@@ -139,13 +139,14 @@ export const payrollSchema = z
       validateUploadFile(data.diplomaFile, EMPLOYEE_DOCUMENT_MIME_TYPES, 'Ijazah', 'Ijazah wajib diunggah', 'Ijazah wajib jpg, jpeg, atau png maksimal 5MB', ctx, ['diplomaFile']);
       validateUploadFile(data.simFile, EMPLOYEE_DOCUMENT_MIME_TYPES, 'SIM', 'SIM wajib diunggah', 'SIM wajib jpg, jpeg, atau png maksimal 5MB', ctx, ['simFile']);
       for (const name of ['ktpFile', 'familyCardFile', 'powerOfAttorneyFile', 'diplomaFile', 'simFile'] as const) {
+        if (name === 'powerOfAttorneyFile' && data.ownershipStatus === 'PRIBADI') continue;
         if (data[name]?.item(0)?.size === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [name], message: 'File tidak boleh kosong' });
       }
     }
 
     const powerOfAttorneyFile = data.powerOfAttorneyFile;
     const hasPowerOfAttorney = powerOfAttorneyFile instanceof FileList && powerOfAttorneyFile.length > 0;
-    if (data.placement === 'SPRINTER ACEH' || data.ownershipStatus === 'ORANG LAIN' || hasPowerOfAttorney) {
+    if (data.ownershipStatus === 'ORANG LAIN' || (data.placement !== 'SPRINTER ACEH' && hasPowerOfAttorney)) {
       validateUploadFile(powerOfAttorneyFile, POWER_OF_ATTORNEY_MIME_TYPES, 'Surat Kuasa', 'Surat kuasa wajib diunggah', 'Surat kuasa wajib pdf, jpg, jpeg, atau png maksimal 5MB', ctx, ['powerOfAttorneyFile']);
     }
   });

@@ -17,22 +17,24 @@ const backendData=(patch={})=>({...fixture,bank:{bank_code:'bank_bca',bank_name:
 for (const key of ['bankCode','bankName','dataAgreement']) delete fixture[key];
 const front=()=>({...values(),bankCode:'bank_bca',bankName:'bca',dataAgreement:true});
 const docs=()=>Object.fromEntries(['ktp','familyCard','powerOfAttorney','diploma','sim'].map(k=>[k,{fileName:'test.png',mimeType:'image/png',size:3,base64:'YWJj'}]));
-test('both Aceh positions accept blank status and require all five documents for either ownership',()=>{
+test('both Aceh positions accept blank status and require four documents plus conditional power of attorney',()=>{
  for(const position of ['SPRINTER ACEH','KORLAP']) for(const ownershipStatus of ['PRIBADI','ORANG LAIN']){
   const v={...front(),position,ownershipStatus}; assert.equal(payrollSchema.safeParse(v).success,true);
-  for(const field of fields){const r=payrollSchema.safeParse({...v,[field]:undefined});assert.equal(r.success,false);assert.ok(r.error.issues.some(i=>i.path[0]===field));}
+  for(const field of fields){if(field==='powerOfAttorneyFile' && ownershipStatus==='PRIBADI'){assert.equal(payrollSchema.safeParse({...v,[field]:undefined}).success,true);continue;}const r=payrollSchema.safeParse({...v,[field]:undefined});assert.equal(r.success,false);assert.ok(r.error.issues.some(i=>i.path[0]===field));}
   assert.equal(ctx.validatePayload(backendData({position,ownershipStatus,employmentStatus:'DEDICATED'})).employmentStatus,'');
  }
 });
 test('Aceh rejects wrong positions and invalid or empty attachments',()=>{
  assert.equal(payrollSchema.safeParse({...front(),position:'Driver'}).success,false);
  assert.throws(()=>ctx.validatePayload(backendData({position:'Driver'})),/Posisi/);
- for(const field of fields) for(const file of [{type:'text/plain',size:3},{type:'image/png',size:0},{type:'image/png',size:5242881}]) assert.equal(payrollSchema.safeParse({...front(),[field]:new TestFileList(file)}).success,false);
+ for(const field of fields) for(const file of [{type:'text/plain',size:3},{type:'image/png',size:0},{type:'image/png',size:5242881}]) assert.equal(payrollSchema.safeParse({...front(),ownershipStatus:'ORANG LAIN',[field]:new TestFileList(file)}).success,false);
  for(const key of Object.keys(docs())){
-  const d=docs();delete d[key];assert.throws(()=>ctx.validateAcehDocuments(d),/wajib/);
-  for(const patch of [{mimeType:'text/plain'},{base64:''},{base64:' ',size:0},{size:4},{base64:Buffer.alloc(5242881).toString('base64'),size:5242881}])assert.throws(()=>ctx.validateAcehDocuments({...docs(),[key]:{...docs()[key],...patch}}));
+  const d=docs();delete d[key];assert.throws(()=>ctx.validateAcehDocuments(d,'ORANG LAIN'),/wajib/);
+  for(const patch of [{mimeType:'text/plain'},{base64:''},{base64:' ',size:0},{size:4},{base64:Buffer.alloc(5242881).toString('base64'),size:5242881}])assert.throws(()=>ctx.validateAcehDocuments({...docs(),[key]:{...docs()[key],...patch}},'ORANG LAIN'));
  }
- ctx.validateAcehDocuments(docs());
+ ctx.validateAcehDocuments(docs(),'ORANG LAIN');
+ const personalDocs=docs();delete personalDocs.powerOfAttorney;ctx.validateAcehDocuments(personalDocs,'PRIBADI');
+ assert.equal(payrollSchema.safeParse({...front(),powerOfAttorneyFile:new TestFileList({type:'text/plain',size:0})}).success,true);
 });
 test('existing placement requirements are preserved',()=>{
  const v={...front(),placement:'WAHANA EXPRESS',position:'Driver',employmentStatus:'Daily Worker',powerOfAttorneyFile:undefined,diplomaFile:undefined,simFile:undefined};
@@ -49,7 +51,7 @@ test('missing Aceh files cannot reach upload or save for NEW or REVISION',()=>{
  ctx.validateBankAccount=()=>({success:true,status:'VALID',score:10});
  ctx.validateTimestamp=()=>{};
  ctx.LockService={getScriptLock:()=>{throw new Error('SHOULD NOT REACH STORAGE');}};
- for(const submissionType of ['NEW','REVISION'])for(const key of Object.keys(docs())){const files=docs();delete files[key];assert.throws(()=>ctx.handleSubmitPayroll({website:'',submissionType,data:backendData(),files}),/wajib diunggah/);}
+ for(const submissionType of ['NEW','REVISION'])for(const key of Object.keys(docs())){const files=docs();delete files[key];assert.throws(()=>ctx.handleSubmitPayroll({website:'',submissionType,data:backendData({ownershipStatus:'ORANG LAIN'}),files}),/wajib diunggah/);}
 });
 test('SIM column appended without changing prior column positions or rewriting old rows',()=>{
  const headers=vm.runInContext('HEADERS',ctx);assert.equal(headers[22],'Status Karyawan');assert.equal(headers[38],'Ijazah URL');assert.equal(headers.at(-1),'SIM URL');
@@ -58,4 +60,17 @@ test('SIM column appended without changing prior column positions or rewriting o
  ctx.createSpreadsheetHeadersForSheet(sheet);assert.deepEqual(writes.map(x=>x.args),[[1,44,1,1]]);
  const row=ctx.buildSubmissionRow('test',ctx.validatePayload(backendData()),{},'ktp','kuasa','kk',{sim:'sim-link'});
  assert.equal(row.length,headers.length);assert.equal(row[22],'');assert.equal(row.at(-1),'sim-link');
+});
+
+test('Aceh personal accounts save four documents and ignore a stale power-of-attorney upload',()=>{
+ const c=vm.createContext({Utilities:{base64Decode:v=>Buffer.from(v,'base64')},MAX_FILE_SIZE:5242880,ALLOWED_MIME_TYPES:{ktp:['image/png'],kartuKeluarga:['image/png'],suratKuasa:['image/png'],diploma:['image/png']}});
+ vm.runInContext(fs.readFileSync('apps-script/Code.gs','utf8'),c);
+ const uploads=[];const saved=[];
+ Object.assign(c,{validateTimestamp:()=>{},validateBankAccount:()=>({success:true,status:'VALID',score:10}),LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},assertOpsSubmissionLimit:()=>{},generateUUID:()=> 'test-id',uploadToDrive:(_file,type)=>{uploads.push(type);return {url:type+'-url'};},saveToSpreadsheet:(...args)=>saved.push(args),logSubmission:()=>{}});
+ for(const position of ['SPRINTER ACEH','KORLAP'])for(const submissionType of ['NEW','REVISION']){
+  uploads.length=0;const files=docs();files.powerOfAttorney={mimeType:'text/plain',base64:'invalid',size:0};
+  assert.equal(c.handleSubmitPayroll({website:'',submissionType,data:backendData({position}),files}).success,true);
+  assert.deepEqual(uploads.sort(),['diploma','kartuKeluarga','ktp','sim']);
+  assert.equal(saved.at(-1)[4],'');assert.equal(saved.at(-1)[1].employmentStatus,'');
+ }
 });

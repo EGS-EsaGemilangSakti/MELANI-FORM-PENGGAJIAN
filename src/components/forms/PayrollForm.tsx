@@ -417,7 +417,7 @@ export function PayrollForm() {
     try {
       const ktp = values.ktpFile.item(0);
       const familyCard = values.familyCardFile.item(0);
-      const powerOfAttorney = values.powerOfAttorneyFile?.item(0) ?? null;
+      const powerOfAttorney = values.placement === 'SPRINTER ACEH' && values.ownershipStatus === 'PRIBADI' ? null : values.powerOfAttorneyFile?.item(0) ?? null;
       const personalPhoto = values.personalPhotoFile?.item(0) ?? null;
       const sim = values.placement === 'SPRINTER ACEH' ? values.simFile?.item(0) ?? null : null;
       const diploma = values.diplomaFile?.item(0) ?? null;
@@ -609,7 +609,7 @@ export function PayrollForm() {
             </div>
           </StepCard>
 
-          {ownershipStatus === 'ORANG LAIN' || summaryValues.placement === 'SPRINTER ACEH' ? (
+          {ownershipStatus === 'ORANG LAIN' ? (
             <StepCard title="Unggah Dokumen" icon={<CloudUpload className="h-5 w-5 text-[#f2ca50]" />}>
               <PowerOfAttorneyUploadField register={register} watch={watch} trigger={trigger} required error={errors.powerOfAttorneyFile?.message} />
             </StepCard>

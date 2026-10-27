@@ -17,7 +17,6 @@ Script Property `BYPASS_BANK_PROVIDER=true` menerima semua rekening yang lolos p
 
 ## SPRINTER ACEH (27 Oktober 2026)
 
-`SprinterAceh.patch` adalah perubahan Code.gs produksi: penempatan/posisi, status kosong, preflight lima lampiran, folder SIM, dan kolom SIM URL yang ditambahkan di akhir tanpa menulis ulang data lama. Patch tidak menyertakan konfigurasi privat atau pengecualian rekening lama. Terapkan pada ekspor Code.gs, simpan, lalu perbarui deployment web app yang sama. Folder SIM dibuat saat upload pertama di bawah folder unggahan yang sudah dikonfigurasi, atau gunakan Script Property SIM_FOLDER_ID.
+`SprinterAceh.patch` adalah perubahan Code.gs produksi: penempatan/posisi, status kosong, preflight empat lampiran wajib dan Surat Kuasa hanya untuk rekening ORANG LAIN, folder SIM, dan kolom SIM URL yang ditambahkan di akhir tanpa menulis ulang data lama. Patch tidak menyertakan konfigurasi privat atau pengecualian rekening lama. Terapkan pada ekspor Code.gs, simpan, lalu perbarui deployment web app yang sama. Folder SIM dibuat saat upload pertama di bawah folder unggahan yang sudah dikonfigurasi, atau gunakan Script Property SIM_FOLDER_ID.
 
 Pengujian integrasi lokal: simpan ekspor Code.gs terbaru pada apps-script/Code.gs (diabaikan Git), lalu jalankan node --test tests/*.test.mjs. Build frontend: npm run build; npm run lint.
-

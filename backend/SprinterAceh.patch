@@ -1,5 +1,5 @@
 diff --git a/Code.gs b/Code.gs
-index 7833183..7311a51 100644
+index 7833183..500f379 100644
 --- a/Code.gs
 +++ b/Code.gs
 @@ -46,7 +46,8 @@ const HEADERS = [
@@ -33,10 +33,19 @@ index 7833183..7311a51 100644
    const data = validatePayload(payload.data || {});
    const submissionType = payload.submissionType;
    if (submissionType !== 'NEW' && submissionType !== 'REVISION') throw new Error('Jenis pengisian tidak valid');
-+  if (data.placement === 'SPRINTER ACEH') validateAcehDocuments(payload.files || {});
++  if (data.placement === 'SPRINTER ACEH') validateAcehDocuments(payload.files || {}, data.ownershipStatus);
    const backendValidation = validateBankAccount({
      origin: payload.origin,
      bank_code: data.bank.bank_code,
+@@ -225,7 +228,7 @@ function handleSubmitPayroll(payload) {
+   const familyCardFile = uploadToDrive(payload.files && payload.files.familyCard, 'kartuKeluarga', submissionId);
+   var suratKuasaFile = { url: '' };
+ 
+-  if (payload.files && payload.files.powerOfAttorney) {
++  if (payload.files && payload.files.powerOfAttorney && !(data.placement === 'SPRINTER ACEH' && data.ownershipStatus === 'PRIBADI')) {
+     suratKuasaFile = uploadToDrive(payload.files.powerOfAttorney, 'suratKuasa', submissionId);
+   }
+ 
 @@ -235,6 +238,7 @@ function handleSubmitPayroll(payload) {
      npwp: uploadOptionalToDrive(payload.files && payload.files.npwp, 'npwp', submissionId),
      bpjsHealth: uploadOptionalToDrive(payload.files && payload.files.bpjsHealth, 'bpjsHealth', submissionId),
@@ -108,17 +117,18 @@ index 7833183..7311a51 100644
    if (existing.join('|') !== HEADERS.join('|')) {
      const lastRow = sheet.getLastRow();
      const existingRows = lastRow > 1
-@@ -752,3 +763,32 @@ function getManualBankApproval(payload) {
+@@ -752,3 +763,33 @@ function getManualBankApproval(payload) {
      validationSource: 'MANUAL_APPROVAL'
    };
  }
 +
 +// Called before any uploads or submission writes for SPRINTER ACEH.
-+function validateAcehDocuments(files) {
++function validateAcehDocuments(files, ownershipStatus) {
 +  const required = [
 +    ['ktp', 'ktp', 'KTP'], ['familyCard', 'kartuKeluarga', 'Kartu Keluarga'],
-+    ['powerOfAttorney', 'suratKuasa', 'Surat Kuasa'], ['diploma', 'diploma', 'Ijazah'], ['sim', 'diploma', 'SIM']
++    ['diploma', 'diploma', 'Ijazah'], ['sim', 'diploma', 'SIM']
 +  ];
++  if (ownershipStatus === 'ORANG LAIN') required.push(['powerOfAttorney', 'suratKuasa', 'Surat Kuasa']);
 +  required.forEach(function (entry) {
 +    const file = files[entry[0]];
 +    if (!file || !file.base64) throw new Error(entry[2] + ' wajib diunggah');
