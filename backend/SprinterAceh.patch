@@ -1,0 +1,143 @@
+diff --git a/Code.gs b/Code.gs
+index 7833183..7311a51 100644
+--- a/Code.gs
++++ b/Code.gs
+@@ -46,7 +46,8 @@ const HEADERS = [
+   'NPWP URL',
+   'BPJS Kesehatan URL',
+   'BPJS Ketenagakerjaan URL',
+-  'Surat Domisili URL'
++  'Surat Domisili URL',
++  'SIM URL'
+ ];
+ const ALLOWED_FIELDS = [
+   'email',
+@@ -91,7 +92,7 @@ const ALLOWED_FIELDS = [
+   'formStartedAt',
+   'bank'
+ ];
+-const PLACEMENTS = ['SHOPEE EXPRESS', 'WAHANA EXPRESS'];
++const PLACEMENTS = ['SHOPEE EXPRESS', 'WAHANA EXPRESS', 'SPRINTER ACEH'];
+ const MIN_ACCOUNT_VALIDATION_SCORE = 7;
+ const WAHANA_EMPLOYMENT_STATUSES = ['Daily Worker', 'DWO', 'DEDICATED'];
+ const SHOPEE_EMPLOYMENT_STATUSES = ['Daily Worker (DW)', 'Dedicated'];
+@@ -116,6 +117,7 @@ const SHOPEE_POSITIONS = [
+   'DRIVER INTRAHUB',
+   'Daily Worker'
+ ];
++const ACEH_POSITIONS = ['SPRINTER ACEH', 'KORLAP'];
+ const WAHANA_POSITIONS = ['Shorter', 'Driver'];
+ const DIVISIONS = ['LM', 'FM', 'SOC', 'MM', 'INV', 'DS', 'SM', 'RETURN', 'FLEET', 'SERVICE POINT'];
+ const EMERGENCY_RELATIONSHIPS = ['Saudara Kandung', 'Saudara', 'Ibu', 'Ayah'];
+@@ -190,6 +192,7 @@ function handleSubmitPayroll(payload) {
+   const data = validatePayload(payload.data || {});
+   const submissionType = payload.submissionType;
+   if (submissionType !== 'NEW' && submissionType !== 'REVISION') throw new Error('Jenis pengisian tidak valid');
++  if (data.placement === 'SPRINTER ACEH') validateAcehDocuments(payload.files || {});
+   const backendValidation = validateBankAccount({
+     origin: payload.origin,
+     bank_code: data.bank.bank_code,
+@@ -235,6 +238,7 @@ function handleSubmitPayroll(payload) {
+     npwp: uploadOptionalToDrive(payload.files && payload.files.npwp, 'npwp', submissionId),
+     bpjsHealth: uploadOptionalToDrive(payload.files && payload.files.bpjsHealth, 'bpjsHealth', submissionId),
+     bpjsEmployment: uploadOptionalToDrive(payload.files && payload.files.bpjsEmployment, 'bpjsEmployment', submissionId),
++    sim: data.placement === 'SPRINTER ACEH' ? uploadToDrive(payload.files.sim, 'sim', submissionId).url : '',
+     domicileLetter: uploadOptionalToDrive(payload.files && payload.files.domicileLetter, 'domicileLetter', submissionId)
+   };
+ 
+@@ -282,10 +286,11 @@ function validatePayload(data) {
+   if (data.placement === 'SHOPEE EXPRESS' && DIVISIONS.indexOf(data.division) === -1) throw new Error('Divisi tidak valid');
+   if (data.placement === 'SHOPEE EXPRESS' && !/^\d+$/.test(data.opsId || '')) throw new Error('ID OPS Shopee hanya boleh berisi angka');
+   if (data.placement === 'WAHANA EXPRESS' && !/^[A-Za-z0-9]+$/.test(data.opsId || '')) throw new Error('ID OPS Wahana hanya boleh berisi huruf dan angka');
++  if (data.placement === 'SPRINTER ACEH' && !/^[A-Za-z0-9]+$/.test(data.opsId || '')) throw new Error('ID OPS wajib diisi dengan huruf dan angka');
+   const allowedEmploymentStatuses = data.placement === 'SHOPEE EXPRESS' ? SHOPEE_EMPLOYMENT_STATUSES : WAHANA_EMPLOYMENT_STATUSES;
+-  if (allowedEmploymentStatuses.indexOf(data.employmentStatus) === -1) throw new Error('Status karyawan tidak sesuai penempatan');
++  if (data.placement !== 'SPRINTER ACEH' && allowedEmploymentStatuses.indexOf(data.employmentStatus) === -1) throw new Error('Status karyawan tidak sesuai penempatan');
+   if (data.placement === 'SHOPEE EXPRESS' && data.employmentStatus === 'Dedicated' && !/^\d+$/.test(data.osId || '')) throw new Error('ID OS hanya boleh berisi angka');
+-  const allowedPositions = data.placement === 'SHOPEE EXPRESS' ? SHOPEE_POSITIONS : WAHANA_POSITIONS;
++  const allowedPositions = data.placement === 'SHOPEE EXPRESS' ? SHOPEE_POSITIONS : data.placement === 'SPRINTER ACEH' ? ACEH_POSITIONS : WAHANA_POSITIONS;
+   if (allowedPositions.indexOf(data.position) === -1) throw new Error('Posisi tidak sesuai penempatan');
+   if (!/^\d{2}-\d{2}-\d{4}$/.test(data.firstWorkDate || '')) throw new Error('Tanggal kerja pertama tidak valid');
+   if (!validateBank(data.bank)) throw new Error('Bank tidak valid');
+@@ -326,7 +331,7 @@ function validatePayload(data) {
+     division: data.placement === 'SHOPEE EXPRESS' ? data.division : '',
+     opsId: data.placement === 'SHOPEE EXPRESS' ? 'Ops' + String(data.opsId) : sanitizeInput(data.opsId),
+     osId: data.placement === 'SHOPEE EXPRESS' && data.employmentStatus === 'Dedicated' ? 'Os' + String(data.osId) : '',
+-    employmentStatus: data.employmentStatus,
++    employmentStatus: data.placement === 'SPRINTER ACEH' ? '' : data.employmentStatus,
+     position: data.position,
+     firstWorkDate: data.firstWorkDate,
+     bank: {
+@@ -495,7 +500,7 @@ function rateLimit(origin, action) {
+ 
+ function uploadToDrive(filePayload, type, submissionId) {
+   if (!filePayload || !filePayload.base64) throw new Error('File wajib diunggah');
+-  const allowedMimeTypes = ALLOWED_MIME_TYPES[type];
++  const allowedMimeTypes = ALLOWED_MIME_TYPES[type === 'sim' ? 'diploma' : type];
+   if (allowedMimeTypes.indexOf(filePayload.mimeType) === -1) throw new Error('MIME file tidak valid');
+   if (Number(filePayload.size) > MAX_FILE_SIZE) throw new Error('Ukuran file melebihi 5MB');
+ 
+@@ -514,7 +519,7 @@ function uploadToDrive(filePayload, type, submissionId) {
+     bpjsEmployment: BPJS_EMPLOYMENT_FOLDER_ID,
+     domicileLetter: DOMICILE_LETTER_FOLDER_ID
+   };
+-  const folderId = folderIds[type];
++  const folderId = type === 'sim' ? getSimFolderId() : folderIds[type];
+   if (!folderId) throw new Error('Folder dokumen tidak dikenal');
+   const fileName = submissionId + '-' + type + extension;
+   const blob = Utilities.newBlob(bytes, filePayload.mimeType, fileName);
+@@ -615,7 +620,8 @@ function buildSubmissionRow(submissionId, data, validation, ktpUrl, suratKuasaUr
+     employeeDocuments.npwp,
+     employeeDocuments.bpjsHealth,
+     employeeDocuments.bpjsEmployment,
+-    employeeDocuments.domicileLetter
++    employeeDocuments.domicileLetter,
++    employeeDocuments.sim || ''
+   ];
+ }
+ 
+@@ -653,6 +659,11 @@ function createSpreadsheetHeadersForSheet(sheet) {
+ 
+   const existingColumnCount = Math.max(sheet.getLastColumn(), 1);
+   const existing = sheet.getRange(1, 1, 1, existingColumnCount).getValues()[0];
++  // Appending document columns must not rewrite existing employee records.
++  if (existing.length < HEADERS.length && existing.every(function (header, index) { return header === HEADERS[index]; })) {
++    sheet.getRange(1, existing.length + 1, 1, HEADERS.length - existing.length).setValues([HEADERS.slice(existing.length)]);
++    return;
++  }
+   if (existing.join('|') !== HEADERS.join('|')) {
+     const lastRow = sheet.getLastRow();
+     const existingRows = lastRow > 1
+@@ -752,3 +763,32 @@ function getManualBankApproval(payload) {
+     validationSource: 'MANUAL_APPROVAL'
+   };
+ }
++
++// Called before any uploads or submission writes for SPRINTER ACEH.
++function validateAcehDocuments(files) {
++  const required = [
++    ['ktp', 'ktp', 'KTP'], ['familyCard', 'kartuKeluarga', 'Kartu Keluarga'],
++    ['powerOfAttorney', 'suratKuasa', 'Surat Kuasa'], ['diploma', 'diploma', 'Ijazah'], ['sim', 'diploma', 'SIM']
++  ];
++  required.forEach(function (entry) {
++    const file = files[entry[0]];
++    if (!file || !file.base64) throw new Error(entry[2] + ' wajib diunggah');
++    if (ALLOWED_MIME_TYPES[entry[1]].indexOf(file.mimeType) === -1) throw new Error('Format ' + entry[2] + ' tidak valid');
++    const bytes = Utilities.base64Decode(file.base64);
++    if (!bytes.length || bytes.length > MAX_FILE_SIZE || Number(file.size) !== bytes.length) {
++      throw new Error('Ukuran ' + entry[2] + ' tidak valid (maksimal 5MB dan tidak boleh kosong)');
++    }
++  });
++}
++
++// Submission holds the script lock, preventing concurrent duplicate SIM folders.
++function getSimFolderId() {
++  const properties = PropertiesService.getScriptProperties();
++  const configured = properties.getProperty('SIM_FOLDER_ID');
++  if (configured) return configured;
++  const root = DriveApp.getFolderById(UPLOADS_FOLDER_ID);
++  const folders = root.getFoldersByName('SIM');
++  const folder = folders.hasNext() ? folders.next() : root.createFolder('SIM');
++  properties.setProperty('SIM_FOLDER_ID', folder.getId());
++  return folder.getId();
++}

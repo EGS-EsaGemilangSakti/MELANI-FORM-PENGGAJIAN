@@ -95,10 +95,10 @@ const stepFields = {
     'ownershipStatus',
     'powerOfAttorneyFile',
   ],
-  3: ['ktpFile', 'familyCardFile', 'personalPhotoFile', 'diplomaFile', 'npwpFile', 'bpjsHealthFile', 'bpjsEmploymentFile', 'domicileLetterFile', 'dataAgreement'],
+  3: ['simFile', 'ktpFile', 'familyCardFile', 'personalPhotoFile', 'diplomaFile', 'npwpFile', 'bpjsHealthFile', 'bpjsEmploymentFile', 'domicileLetterFile', 'dataAgreement'],
 } as const;
 
-type PersistedPayrollValues = Partial<Omit<PayrollFormValues, 'ktpFile' | 'familyCardFile' | 'powerOfAttorneyFile' | 'personalPhotoFile' | 'diplomaFile' | 'npwpFile' | 'bpjsHealthFile' | 'bpjsEmploymentFile' | 'domicileLetterFile'>>;
+type PersistedPayrollValues = Partial<Omit<PayrollFormValues, 'simFile' | 'ktpFile' | 'familyCardFile' | 'powerOfAttorneyFile' | 'personalPhotoFile' | 'diplomaFile' | 'npwpFile' | 'bpjsHealthFile' | 'bpjsEmploymentFile' | 'domicileLetterFile'>>;
 
 interface PersistedDraft {
   currentStep?: 1 | 2 | 3;
@@ -173,6 +173,7 @@ function loadPersistedDraft(): PersistedDraft {
 function savePersistedDraft(currentStep: number, values: unknown) {
   if (typeof window === 'undefined') return;
   const persistableValues = { ...(values as Record<string, unknown>) };
+  delete persistableValues.simFile;
   delete persistableValues.ktpFile;
   delete persistableValues.familyCardFile;
   delete persistableValues.powerOfAttorneyFile;
@@ -418,6 +419,7 @@ export function PayrollForm() {
       const familyCard = values.familyCardFile.item(0);
       const powerOfAttorney = values.powerOfAttorneyFile?.item(0) ?? null;
       const personalPhoto = values.personalPhotoFile?.item(0) ?? null;
+      const sim = values.placement === 'SPRINTER ACEH' ? values.simFile?.item(0) ?? null : null;
       const diploma = values.diplomaFile?.item(0) ?? null;
       const npwp = values.npwpFile?.item(0) ?? null;
       const bpjsHealth = values.bpjsHealthFile?.item(0) ?? null;
@@ -462,7 +464,7 @@ export function PayrollForm() {
           division: values.division,
           opsId: values.opsId,
           osId: values.osId,
-          employmentStatus: values.employmentStatus,
+          employmentStatus: values.placement === 'SPRINTER ACEH' ? '' : values.employmentStatus,
           position: values.position,
           firstWorkDate: toDisplayDate(values.firstWorkDate),
           accountNumber: values.accountNumber,
@@ -476,6 +478,7 @@ export function PayrollForm() {
           ktp: await fileToBase64Payload(ktp, 'KTP'),
           familyCard: await fileToBase64Payload(familyCard, 'Kartu Keluarga'),
           personalPhoto: personalPhoto ? await fileToBase64Payload(personalPhoto, 'Foto Diri') : null,
+          sim: sim ? await fileToBase64Payload(sim, 'SIM') : null,
           diploma: diploma ? await fileToBase64Payload(diploma, 'Ijazah') : null,
           npwp: npwp ? await fileToBase64Payload(npwp, 'NPWP') : null,
           bpjsHealth: bpjsHealth ? await fileToBase64Payload(bpjsHealth, 'BPJS Kesehatan') : null,
@@ -579,7 +582,7 @@ export function PayrollForm() {
         <div className="space-y-6">
           <StepCard title="Detail Penempatan" icon={<BriefcaseBusiness className="h-5 w-5 text-[#f2ca50]" />}>
             <PlacementField register={register} setValue={setValue} watch={watch} error={errors.placement?.message} />
-            <EmploymentStatusField register={register} setValue={setValue} watch={watch} error={errors.employmentStatus?.message} />
+            {summaryValues.placement !== 'SPRINTER ACEH' ? <EmploymentStatusField register={register} setValue={setValue} watch={watch} error={errors.employmentStatus?.message} /> : null}
             <AreaAndOpsFields register={register} setValue={setValue} watch={watch} errors={{ area: errors.area?.message, opsId: errors.opsId?.message, osId: errors.osId?.message }} />
             {summaryValues.placement === 'SHOPEE EXPRESS' ? <DivisionField register={register} setValue={setValue} watch={watch} error={errors.division?.message} /> : null}
             <PositionField register={register} setValue={setValue} watch={watch} error={errors.position?.message} />
@@ -606,7 +609,7 @@ export function PayrollForm() {
             </div>
           </StepCard>
 
-          {ownershipStatus === 'ORANG LAIN' ? (
+          {ownershipStatus === 'ORANG LAIN' || summaryValues.placement === 'SPRINTER ACEH' ? (
             <StepCard title="Unggah Dokumen" icon={<CloudUpload className="h-5 w-5 text-[#f2ca50]" />}>
               <PowerOfAttorneyUploadField register={register} watch={watch} trigger={trigger} required error={errors.powerOfAttorneyFile?.message} />
             </StepCard>
@@ -620,7 +623,8 @@ export function PayrollForm() {
             {summaryValues.placement === 'SHOPEE EXPRESS' ? <EmployeeDocumentUploadField name="personalPhotoFile" label="Foto Diri" register={register} watch={watch} trigger={trigger} error={errors.personalPhotoFile?.message} /> : null}
             <KtpUploadField register={register} watch={watch} trigger={trigger} error={errors.ktpFile?.message} />
             <FamilyCardUploadField register={register} watch={watch} trigger={trigger} error={errors.familyCardFile?.message} />
-            {summaryValues.placement === 'SHOPEE EXPRESS' ? <EmployeeDocumentUploadField name="diplomaFile" label="Foto Ijazah" register={register} watch={watch} trigger={trigger} error={errors.diplomaFile?.message} /> : null}
+            {['SHOPEE EXPRESS', 'SPRINTER ACEH'].includes(summaryValues.placement) ? <EmployeeDocumentUploadField name="diplomaFile" label="Foto Ijazah" register={register} watch={watch} trigger={trigger} error={errors.diplomaFile?.message} /> : null}
+            {summaryValues.placement === 'SPRINTER ACEH' ? <EmployeeDocumentUploadField name="simFile" label="Foto SIM" register={register} watch={watch} trigger={trigger} error={errors.simFile?.message} /> : null}
             {summaryValues.placement === 'SHOPEE EXPRESS' && summaryValues.employmentStatus === 'Dedicated' ? <>
               <EmployeeDocumentUploadField name="npwpFile" label="Foto NPWP" register={register} watch={watch} trigger={trigger} error={errors.npwpFile?.message} />
               <EmployeeDocumentUploadField name="bpjsHealthFile" label="Foto BPJS Kesehatan" register={register} watch={watch} trigger={trigger} error={errors.bpjsHealthFile?.message} />
@@ -633,7 +637,7 @@ export function PayrollForm() {
             <div className="space-y-6 border-b border-white/5 pb-6 md:col-span-2">
               <SummaryItem label="Nama Lengkap" value={summaryValues.fullName} />
               <SummaryItem label="Posisi" value={summaryValues.position} />
-              <SummaryItem label="Status Karyawan" value={summaryValues.employmentStatus} />
+              {summaryValues.placement !== 'SPRINTER ACEH' ? <SummaryItem label="Status Karyawan" value={summaryValues.employmentStatus} /> : null}
               <SummaryItem label="Area" value={summaryValues.area} />
               {summaryValues.division ? <SummaryItem label="Divisi" value={summaryValues.division} /> : null}
               <SummaryItem label="ID OPS" value={summaryValues.placement === 'SHOPEE EXPRESS' ? `Ops${summaryValues.opsId}` : summaryValues.opsId} />

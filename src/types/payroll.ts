@@ -71,6 +71,7 @@ export interface PayrollFormValues {
   ktpFile: FileList;
   familyCardFile: FileList;
   personalPhotoFile?: FileList;
+  simFile?: FileList;
   diplomaFile?: FileList;
   npwpFile?: FileList;
   bpjsHealthFile?: FileList;
@@ -82,7 +83,7 @@ export interface PayrollFormValues {
   formStartedAt: string;
 }
 
-type UploadFieldNames = 'ktpFile' | 'familyCardFile' | 'powerOfAttorneyFile' | 'personalPhotoFile' | 'diplomaFile' | 'npwpFile' | 'bpjsHealthFile' | 'bpjsEmploymentFile' | 'domicileLetterFile';
+type UploadFieldNames = 'simFile' | 'ktpFile' | 'familyCardFile' | 'powerOfAttorneyFile' | 'personalPhotoFile' | 'diplomaFile' | 'npwpFile' | 'bpjsHealthFile' | 'bpjsEmploymentFile' | 'domicileLetterFile';
 
 export interface PayrollSubmitPayload {
   origin: string;
@@ -96,6 +97,7 @@ export interface PayrollSubmitPayload {
     ktp: UploadPayload;
     familyCard: UploadPayload;
     personalPhoto: UploadPayload | null;
+    sim: UploadPayload | null;
     diploma: UploadPayload | null;
     npwp: UploadPayload | null;
     bpjsHealth: UploadPayload | null;

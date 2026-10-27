@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { MIN_ACCOUNT_VALIDATION_SCORE } from '../constants/accountValidation';
 import { BANKS } from '../constants/banks';
-import { DIVISIONS, EMERGENCY_RELATIONSHIPS, EMPLOYMENT_STATUSES, OWNERSHIP_STATUSES, PLACEMENTS, POSITIONS, SHOPEE_EMPLOYMENT_STATUSES, SHOPEE_POSITIONS, WAHANA_EMPLOYMENT_STATUSES, WAHANA_POSITIONS } from '../constants/placements';
+import { ACEH_POSITIONS, DIVISIONS, EMERGENCY_RELATIONSHIPS, EMPLOYMENT_STATUSES, OWNERSHIP_STATUSES, PLACEMENTS, POSITIONS, SHOPEE_EMPLOYMENT_STATUSES, SHOPEE_POSITIONS, WAHANA_EMPLOYMENT_STATUSES, WAHANA_POSITIONS } from '../constants/placements';
 import { GENDERS, MARITAL_STATUSES, PTKP_CODES, RELIGIONS } from '../constants/personal';
 import { EMPLOYEE_DOCUMENT_MIME_TYPES, FAMILY_CARD_MIME_TYPES, KTP_MIME_TYPES, MAX_FILE_SIZE, POWER_OF_ATTORNEY_MIME_TYPES } from '../utils/validators';
 
@@ -68,7 +68,7 @@ export const payrollSchema = z
     division: z.string(),
     opsId: z.string().trim().min(1, 'ID OPS wajib diisi'),
     osId: z.string().trim(),
-    employmentStatus: z.enum(EMPLOYMENT_STATUSES, { message: 'Status karyawan wajib dipilih' }),
+    employmentStatus: z.union([z.enum(EMPLOYMENT_STATUSES), z.literal('')]),
     position: z.enum(POSITIONS, { message: 'Posisi wajib dipilih' }),
     firstWorkDate: z.string().min(1, 'Tanggal kerja pertama wajib diisi'),
     bankCode: z.string().refine((code) => BANKS.some((bank) => bank.bank_code === code), 'Bank wajib dipilih'),
@@ -86,6 +86,7 @@ export const payrollSchema = z
     ktpFile: fileListSchema,
     familyCardFile: fileListSchema,
     personalPhotoFile: z.custom<FileList>().optional(),
+    simFile: z.custom<FileList>().optional(),
     diplomaFile: z.custom<FileList>().optional(),
     npwpFile: z.custom<FileList>().optional(),
     bpjsHealthFile: z.custom<FileList>().optional(),
@@ -98,10 +99,10 @@ export const payrollSchema = z
   })
   .superRefine((data, ctx) => {
     const allowedStatuses = data.placement === 'SHOPEE EXPRESS' ? SHOPEE_EMPLOYMENT_STATUSES : WAHANA_EMPLOYMENT_STATUSES;
-    if (!(allowedStatuses as readonly string[]).includes(data.employmentStatus)) {
+    if (data.placement !== 'SPRINTER ACEH' && !(allowedStatuses as readonly string[]).includes(data.employmentStatus)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['employmentStatus'], message: 'Status karyawan tidak sesuai penempatan' });
     }
-    const allowedPositions = data.placement === 'SHOPEE EXPRESS' ? SHOPEE_POSITIONS : WAHANA_POSITIONS;
+    const allowedPositions = data.placement === 'SHOPEE EXPRESS' ? SHOPEE_POSITIONS : data.placement === 'SPRINTER ACEH' ? ACEH_POSITIONS : WAHANA_POSITIONS;
     if (!(allowedPositions as readonly string[]).includes(data.position)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['position'], message: 'Posisi tidak sesuai penempatan' });
     }
@@ -134,9 +135,17 @@ export const payrollSchema = z
       }
     }
 
+    if (data.placement === 'SPRINTER ACEH') {
+      validateUploadFile(data.diplomaFile, EMPLOYEE_DOCUMENT_MIME_TYPES, 'Ijazah', 'Ijazah wajib diunggah', 'Ijazah wajib jpg, jpeg, atau png maksimal 5MB', ctx, ['diplomaFile']);
+      validateUploadFile(data.simFile, EMPLOYEE_DOCUMENT_MIME_TYPES, 'SIM', 'SIM wajib diunggah', 'SIM wajib jpg, jpeg, atau png maksimal 5MB', ctx, ['simFile']);
+      for (const name of ['ktpFile', 'familyCardFile', 'powerOfAttorneyFile', 'diplomaFile', 'simFile'] as const) {
+        if (data[name]?.item(0)?.size === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [name], message: 'File tidak boleh kosong' });
+      }
+    }
+
     const powerOfAttorneyFile = data.powerOfAttorneyFile;
     const hasPowerOfAttorney = powerOfAttorneyFile instanceof FileList && powerOfAttorneyFile.length > 0;
-    if (data.ownershipStatus === 'ORANG LAIN' || hasPowerOfAttorney) {
+    if (data.placement === 'SPRINTER ACEH' || data.ownershipStatus === 'ORANG LAIN' || hasPowerOfAttorney) {
       validateUploadFile(powerOfAttorneyFile, POWER_OF_ATTORNEY_MIME_TYPES, 'Surat Kuasa', 'Surat kuasa wajib diunggah', 'Surat kuasa wajib pdf, jpg, jpeg, atau png maksimal 5MB', ctx, ['powerOfAttorneyFile']);
     }
   });
