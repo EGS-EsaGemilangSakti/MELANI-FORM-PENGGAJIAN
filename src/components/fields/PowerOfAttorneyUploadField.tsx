@@ -18,6 +18,7 @@ export function PowerOfAttorneyUploadField({
   required: boolean;
 }) {
   const [preview, setPreview] = useState('');
+  const aceh = watch('placement') === 'SPRINTER ACEH';
   const fileList = watch('powerOfAttorneyFile');
   const file = fileList?.item(0);
   const fileRegister = register('powerOfAttorneyFile', { onChange: () => void trigger('powerOfAttorneyFile') });
@@ -47,7 +48,7 @@ export function PowerOfAttorneyUploadField({
           {file ? file.name : 'Upload Surat Kuasa'}
         </p>
         {file ? <p className="mt-1 text-xs font-semibold text-[#f2ca50]">Ukuran file: {formatFileSize(file.size)}</p> : null}
-        <p className="mt-1 max-w-52 text-xs font-medium leading-4 text-[#d0c5af]">Format PDF, JPG, JPEG, atau PNG. Maks 5MB per file. Wajib jika rekening milik orang lain.</p>
+        <p className="mt-1 max-w-52 text-xs font-medium leading-4 text-[#d0c5af]">Format PDF, JPG, JPEG, atau PNG. Maks 5MB per file. {aceh ? 'Wajib untuk seluruh karyawan SPRINTER ACEH, termasuk rekening pribadi.' : 'Wajib jika rekening milik orang lain.'}</p>
         <input className="absolute inset-0 cursor-pointer opacity-0" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" {...fileRegister} />
       </div>
       {error ? <span className="mt-2 block text-sm text-accent">{error}</span> : null}
